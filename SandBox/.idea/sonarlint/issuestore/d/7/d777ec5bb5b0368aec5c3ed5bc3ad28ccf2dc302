@@ -1,0 +1,42 @@
+
+R
+java:S1172·"/Remove this unused method parameter "earthMap".(½ßè÷ıÿÿÿÿ8¨³±’.
+A
+java:S2119—"Save and re-use this "Random".(šŸ«íøÿÿÿÿ8¨³±’.
+V
+java:S4973f"9Use the "equals" method if value comparison was intended.(¬·Ìì8¨³±’.
+W
+java:S4973×"9Use the "equals" method if value comparison was intended.(úô‚Æ8¨³±’.
+Z
+java:S1197"8Move the array designator from the variable to the type.(¡şÏÖøÿÿÿÿ8åÄ ’.
+[
+java:S1197’"8Move the array designator from the variable to the type.(ÔÑã¥şÿÿÿÿ8¨³±’.
+W
+java:S4973Ô"9Use the "equals" method if value comparison was intended.(å™”Ó8åÄ ’.
+\
+java:S4973Ö"9Use the "equals" method if value comparison was intended.(“åÕøÿÿÿÿ8î¸ù’.
+€
+java:S1488"bImmediately return this expression instead of assigning it to the temporary variable "randomCell".(¯êà®8¨³±’.
+d	java:S107Ø"BConstructor has 12 parameters, which is greater than 7 authorized.(¢ìû£ûÿÿÿÿ8¨³±’.
+w
+java:S2293ğ"YReplace the type specification in this constructor call with the diamond operator ("<>").(·Õ¬Ô8¨³±’.
+‘
+java:S1488ƒ"sImmediately return this expression instead of assigning it to the temporary variable "listWithoutEndOfMapAndEarth".(ê×˜Æ8ó€¾’.
+
+java:S1488Õ"kImmediately return this expression instead of assigning it to the temporary variable "listWithoutEndOfMap".(øÓéŠşÿÿÿÿ8¨³±’.
+v
+java:S2293%"YReplace the type specification in this constructor call with the diamond operator ("<>").(ƒã€©8åÄ ’.
+u
+java:S3776"RRefactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.(É‚±øÿÿÿÿ8¨³±’.
+d
+java:S1192Ô"FDefine a constant instead of duplicating this literal "MOVE " 4 times.(å™”Ó8¨³±’.
+|
+java:S2293ı"YReplace the type specification in this constructor call with the diamond operator ("<>").(Àë³¶ÿÿÿÿÿ8¨³±’.
+\
+java:S4973Õ"9Use the "equals" method if value comparison was intended.(Æ”…ëÿÿÿÿÿ8åÄ ’.
+`
+java:S2094ß"BRemove this empty class, write its code or make it an "interface".(¢ÂŸÔ8¨³±’.
+w
+java:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(µÿËé8¨³±’.
+f
+java:S1192Ô"HDefine a constant instead of duplicating this literal "TORPEDO" 4 times.(å™”Ó8¨³±’.
