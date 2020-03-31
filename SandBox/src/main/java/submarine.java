@@ -59,6 +59,9 @@ class Player {
 
         // ********* 2 **** Game loop:
         while (true) {
+            boolean fireTorpedo = false;
+            boolean loadedTorpedo = false;
+            boolean fire = false;
             int x = in.nextInt();
             mySubmarine.setPositionX(x);
             int y = in.nextInt();
@@ -89,21 +92,46 @@ class Player {
             mySubmarine.setSafeListOfCellAroundMe(safeListAroundMe);
 
             // ********** 3   **** Action:
-
-            // todo 1/ Analyse opponent orders for trying to locate him
-            // read if torpedo sent (range of position follow opponent new move)
-            boolean opponentSentTorpedo = locateOpponent.readIfOpponentSentTorpedo(mySubmarine.getOpponentOrders());
-            if (opponentSentTorpedo) {
-                locateOpponent.createRangCellOfOpponentPositionWhenSendTorpedo(mySubmarine, board);
-            }
-
             // think for next move
             String nextMove = move.moveIA1(mySubmarine, earthMap, board);
 
+            // 1/ Analyse opponent orders for trying to locate him
+            // -> 1/ if opponent torpedo is sending-> lock range (this range follow opponent new move)
+            boolean opponentSentTorpedo = locateOpponent.readIfOpponentSentTorpedo(mySubmarine.getOpponentOrders());
+            // if opponent has send torpedo -> locate range move when opponent re-load his torpedo
+            if (mySubmarine.getListOpponentPositionAfterTorpedo() != null) {
+                locateOpponent.updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board);
+            }
+            // if opponent send torpedo
+            if (opponentSentTorpedo) {
+                locateOpponent.createRangeCellOfOpponentPositionWhenSendTorpedo(mySubmarine, board);
+            }
+            // check if i can fire torpedo following my position (my torpedo loaded and opponent locate list)
+            if (mySubmarine.getTorpedoCooldown() == 0 && mySubmarine.getListOpponentPositionAfterTorpedo() != null) {
+                List<Cell> potentialfireList = torpedo.mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySubmarine.getListOpponentPositionAfterTorpedo(), mySubmarine);
+                // remove cell around me
+                List<Cell> safeList = utils.createSafeCellListAroundMe(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
+                // remove safeList of potentialFireList
+                List<Cell> fireList = utils.mixTwoListAndKeepEqualOnCellOut(potentialfireList, safeList);
+                // record list on submarine
+                mySubmarine.setTorpedoFireList(fireList);
+                // check
+                Long countFirecell = fireList.stream().count();
+                System.err.println("Possibility of fire on: " + countFirecell);
+//                System.err.println("Possibility of fire on: " + fireList.toString());
+                if (!fireList.isEmpty()) {
+                    fireTorpedo = true;
+                }
+            }
+
+
+
+
             // if torpedo is load -> create list torperdo range (without map limit and earth)
+            List<Cell> torpedorange = torpedo.createCellListTorpedoRangeWithoutXYPosition(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
+            mySubmarine.setListTorpedoRange(torpedorange);
             if (mySubmarine.getTorpedoCooldown() == 0) {
-                List<Cell> torpedorange = torpedo.createCellListTorpedoRangeWithoutXYPosition(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
-                mySubmarine.setListTorpedoRange(torpedorange);
+                loadedTorpedo = true;
                 // check
                 System.err.println("my Torpedo load and list range ok");
             }
@@ -113,8 +141,24 @@ class Player {
             listCellAlreadyVisited.add(myMoveCell);
             board.setListCellAlreadyVisited(listCellAlreadyVisited);
 
-            // order for move
-            System.out.println(nextMove);
+            // add torpedo order if possible
+            if (fireTorpedo && loadedTorpedo) {
+                fire = true;
+
+            }
+            // add fire on move order
+            if (fire) {
+                // get random cell on fireList
+                Cell randomfireTorpedo = utils.randomCellOnList(mySubmarine.getTorpedoFireList());
+                String addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
+                String nextMoveFire = addfireTorpedoString + "|" + nextMove;
+                // order of move and fire
+                System.out.println(nextMoveFire);
+            } else {
+                // order for move
+                System.out.println(nextMove);
+            }
+
 
 
             // print submarines info
@@ -218,6 +262,9 @@ class Move {
         if (!listWithoutMapLimitEarthAndAlreadyVisited.isEmpty()) {
             Cell cellToMoveRandom = utils.randomCellOnList(listWithoutMapLimitEarthAndAlreadyVisited);
 
+            // record my next move on mySubmarine
+            mySubmarine.setMyNextMove(cellToMoveRandom);
+
             // move to random cell
             if (cellToMoveRandom.getX() != -10) {
                 if (cellToMoveRandom.getCardinalPoint() == "N ") { return "MOVE " + cellToMoveRandom.getCardinalPoint() + "TORPEDO"; }
@@ -271,37 +318,45 @@ class LocateOpponent {
     public Cell readOpponentTorpedoCell(String opponentOrders) {
         Cell opponentTorpedoCell = new Cell();
 
-        String[] torpedoCells = opponentOrders.split("TORPEDO ");
-//        for (String a: torpedoCells) {
-//            System.err.println("torpedo cell: " + a);
-//        }
-        // check
-        if (torpedoCells.length > 1) {
-//            // check
-//            System.err.println("opponent order Torpedo: " + torpedoCells[1]);
-            // char -> int for x
-            char torpXchar = torpedoCells[1].charAt(0);
-            String torpXString = String.valueOf(torpXchar);
-            int torpXint = Integer.valueOf(torpXString);
-            // char -> int for y
-            char torpYchar = torpedoCells[1].charAt(2);
-            String torpYString = String.valueOf(torpYchar);
-            int torpYint = Integer.valueOf(torpYString);
-            opponentTorpedoCell.setX(torpXint);
-            opponentTorpedoCell.setY(torpYint);
+        // if many opponent word
+        if (opponentOrders.contains("|")) {
+            String[] words = opponentOrders.split("\\|");
+            for (String word:words) {
+                if (word.contains("TORPEDO ")) {
+                    String[] blocks = word.split(" ");
+                    int torpX = Integer.valueOf(blocks[1]);
+                    int torpY = Integer.valueOf(blocks[2]);
+                    opponentTorpedoCell.setX(torpX);
+                    opponentTorpedoCell.setY(torpY);
+                }
+            }
+        } else {
+            if (opponentOrders.contains("TORPEDO ")) {
+                String[] blocks = opponentOrders.split(" ");
+                int torpX = Integer.valueOf(blocks[1]);
+                int torpY = Integer.valueOf(blocks[2]);
+                opponentTorpedoCell.setX(torpX);
+                opponentTorpedoCell.setY(torpY);
+            }
         }
+
         // check
         System.err.println("opponent order Torpedo cell: " + opponentTorpedoCell.toString());
         return opponentTorpedoCell;
 
     }
 
-    public void createRangCellOfOpponentPositionWhenSendTorpedo(Submarine mySubmarine, Board board) {
+    public void createRangeCellOfOpponentPositionWhenSendTorpedo(Submarine mySubmarine, Board board) {
 
         // find torpedo explosion cell
         Cell opponentTorpedoCell = readOpponentTorpedoCell(mySubmarine.getOpponentOrders());
+
+        // record torpedo explosion cell
+        mySubmarine.setOpponentTorpedoExplosion(opponentTorpedoCell);
+
         // create list of position where opponent is (after he has send torpedo)
         List<Cell> listPresenceOpponentTorpedo = torpedo.createCellListTorpedoRangeWithoutXYPosition(opponentTorpedoCell.getX(), opponentTorpedoCell.getY(),board);
+
         // record presence opponent list on mySubmarine
         mySubmarine.setListOpponentPositionAfterTorpedo(listPresenceOpponentTorpedo);
         // check
@@ -309,20 +364,32 @@ class LocateOpponent {
         long nbrCasePosible = listPresenceOpponentTorpedo.stream().count();
         System.err.println("opponnent send torp ->: " + nbrCasePosible + " cell position possibility!!");
 
+        // opponent Presence List After Torpedo Update With his next Movement
+        updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board);
+    }
+
+    public void updateOpponentPresenceListAfterTorpedoWithNewMovement(Submarine mySubmarine, Board board) {
+
         // read opponent next move
         String opponentNextMove = readOpponentMove(mySubmarine.getOpponentOrders());
+        // read opponent torpedo explosion cell
+        Cell opponentTorpedocell = mySubmarine.getOpponentTorpedoExplosion();
+
+        // find torpedo explosion Cell following his next move
+        Cell opponentTorpedoCellAfterMove = utils.findCellWithCardinalPoint(opponentNextMove,opponentTorpedocell.getX(), opponentTorpedocell.getY());
+        // check
+        System.err.println("new cell center range opp : " + opponentTorpedoCellAfterMove.toString());
 
         // re-center list of presence with opponent next move
-        // find new explosion center (for decal range opponnent presence with new position)
-        Cell cellWithNextMove = utils.findCellWithCardinalPoint(opponentNextMove, opponentTorpedoCell.getX(), opponentTorpedoCell.getY());
-        // check
-        System.err.println("new cell center range opp : " + cellWithNextMove.toString());
-        // create new list
-        List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRangeWithoutXYPosition(cellWithNextMove.getX(), cellWithNextMove.getY(),board);
+        List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRangeWithoutXYPosition(opponentTorpedoCellAfterMove.getX(), opponentTorpedoCellAfterMove.getY(),board);
+
         // re-record new range posibility of opponent presence
         mySubmarine.setListOpponentPositionAfterTorpedo(listNewPresenceOpponentTorpedo);
         // check
-        System.err.println("new opp range list : " + mySubmarine.getListOpponentPositionAfterTorpedo().toString());
+//        System.err.println("update opp range list(torpedo): " + mySubmarine.getListOpponentPositionAfterTorpedo().toString());
+
+        // record new torpedo explosion cell
+        mySubmarine.setOpponentTorpedoExplosion(opponentTorpedoCellAfterMove);
     }
 }
 
@@ -398,6 +465,24 @@ class Torpedo {
 //        long nbrCasePosible = listWithoutEndOfMapAndEarthAndXY.stream().count();
 //        System.err.println("my taget case possible(torp): " + nbrCasePosible);
         return listWithoutEndOfMapAndEarthAndXY;
+    }
+
+    public List<Cell> mixRangePossibilityAfterTorpedoWithMyRangeTorpedo (List<Cell> inputRangeListAfterTorpedo, Submarine mySubmarine) {
+        List<Cell> possibilityOfTorpedoFire = new ArrayList<>();
+        List<Cell> myRangeTorpedoList = mySubmarine.getListTorpedoRange();
+
+        for (int i = 0; i < inputRangeListAfterTorpedo.size() ; i++) {
+            for (int j = 0; j < myRangeTorpedoList.size(); j++) {
+                if (inputRangeListAfterTorpedo.get(i).getX() == myRangeTorpedoList.get(j).getX()) {
+                    if (inputRangeListAfterTorpedo.get(i).getY() == myRangeTorpedoList.get(j).getY()) {
+                        possibilityOfTorpedoFire.add(myRangeTorpedoList.get(j));
+                    }
+                }
+            }
+        }
+        // check
+//        System.err.println("Possibility of fire on: " + possibilityOfTorpedoFire.toString());
+        return possibilityOfTorpedoFire;
     }
 }
 
@@ -583,7 +668,26 @@ class Utils {
             cell.setX(x + 1);
             cell.setY(y);
         }
+        // check
+//        System.err.println("passage recenter cell: ");
         return cell;
+    }
+
+    public List<Cell> mixTwoListAndKeepEqualOnCellOut (List<Cell> potentialFireList, List<Cell> safeList) {
+        List<Cell> newPotentialFireList = new ArrayList<>();
+        for (int i = 0; i < potentialFireList.size(); i++) {
+            newPotentialFireList.add(potentialFireList.get(i));
+        }
+
+        for (int i = 0; i < potentialFireList.size() ; i++) {
+            for (int j = 0; j < safeList.size(); j++) {
+                if (potentialFireList.get(i).getX() == safeList.get(j).getX() &&
+                        potentialFireList.get(i).getY() == safeList.get(j).getY()) {
+                    newPotentialFireList.remove(potentialFireList.get(i));
+                }
+            }
+        }
+        return newPotentialFireList;
     }
 }
 
@@ -603,13 +707,16 @@ class Submarine {
     private List<Cell> safeListOfCellAroundMe;
     private List<Cell> listTorpedoRange;
     private List<Cell> listOpponentPositionAfterTorpedo;
+    private Cell opponentTorpedoExplosion;
+    private List<Cell> torpedoFireList;
+    private Cell myNextMove;
 
 
     // constructor
     public Submarine() {
     }
 
-    public Submarine(int id, int positionX, int positionY, int life, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo) {
+    public Submarine(int id, int positionX, int positionY, int life, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove) {
         this.id = id;
         this.positionX = positionX;
         this.positionY = positionY;
@@ -623,6 +730,9 @@ class Submarine {
         this.safeListOfCellAroundMe = safeListOfCellAroundMe;
         this.listTorpedoRange = listTorpedoRange;
         this.listOpponentPositionAfterTorpedo = listOpponentPositionAfterTorpedo;
+        this.opponentTorpedoExplosion = opponentTorpedoExplosion;
+        this.torpedoFireList = torpedoFireList;
+        this.myNextMove = myNextMove;
     }
 
     // getters setters
@@ -704,6 +814,24 @@ class Submarine {
     public void setListOpponentPositionAfterTorpedo(List<Cell> listOpponentPositionAfterTorpedo) {
         this.listOpponentPositionAfterTorpedo = listOpponentPositionAfterTorpedo;
     }
+    public Cell getOpponentTorpedoExplosion() {
+        return opponentTorpedoExplosion;
+    }
+    public void setOpponentTorpedoExplosion(Cell opponentTorpedoExplosion) {
+        this.opponentTorpedoExplosion = opponentTorpedoExplosion;
+    }
+    public List<Cell> getTorpedoFireList() {
+        return torpedoFireList;
+    }
+    public void setTorpedoFireList(List<Cell> torpedoFireList) {
+        this.torpedoFireList = torpedoFireList;
+    }
+    public Cell getMyNextMove() {
+        return myNextMove;
+    }
+    public void setMyNextMove(Cell myNextMove) {
+        this.myNextMove = myNextMove;
+    }
 
     // to string
     @Override
@@ -722,8 +850,12 @@ class Submarine {
                 ", safeListOfCellAroundMe=" + safeListOfCellAroundMe +
                 ", listTorpedoRange=" + listTorpedoRange +
                 ", listOpponentPositionAfterTorpedo=" + listOpponentPositionAfterTorpedo +
+                ", opponentTorpedoExplosion=" + opponentTorpedoExplosion +
+                ", torpedoFireList=" + torpedoFireList +
+                ", myNextMove=" + myNextMove +
                 '}';
     }
+
 }
 
 class Cell {
