@@ -1,4 +1,3 @@
-import java.time.LocalDate;
 import java.util.*;
 
 import static java.lang.StrictMath.abs;
@@ -19,6 +18,7 @@ class Player {
         Torpedo torpedo = new Torpedo();
         LocateOpponent locateOpponent = new LocateOpponent();
         List<Cell> listCellAlreadyVisited = new ArrayList<>();
+        boolean isOpponentSentTorpedo = false;
 
         Scanner in = new Scanner(System.in);
         int width = in.nextInt();
@@ -46,7 +46,7 @@ class Player {
         // record earthCell on board
         deploy.recordEarthCellOnBoard(earthMap, board);
 
-        // ****** 1 **** Deployement:
+        // ****** 1 **** Deployement********************************************************************************************:
         // map analyse for deploy
         String deployPositionString = deploy.deploy(earthMap);
 
@@ -57,7 +57,7 @@ class Player {
         List<Sector> sectorList = utils.makeSectors(0,0);
         board.setListSecteurs(sectorList);
 
-        // ********* 2 **** Game loop:
+        // ********* 2 **** Game loop********************************************************************************************:
         while (true) {
             boolean fireTorpedo = false;
             boolean loadedTorpedo = false;
@@ -87,65 +87,51 @@ class Player {
             String opponentOrders = in.nextLine();
             mySubmarine.setOpponentOrders(opponentOrders);
 
-            // create safe list without map end(around me in case of fire torpedo!)
-            List<Cell> safeListAroundMe = utils.createSafeCellListAroundMe(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
-            mySubmarine.setSafeListOfCellAroundMe(safeListAroundMe);
+            // utils
+            utils.createSafeCellListAroundMe(mySubmarine, board);
+            isOpponentSentTorpedo = locateOpponent.readIfOpponentSentTorpedo(mySubmarine.getOpponentOrders());
+            List<Cell> torpedorange = torpedo.createCellListTorpedoRange(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
+            mySubmarine.setListTorpedoRange(torpedorange);
 
-            // ********** 3   **** Action:
-            // think for next move
-            String nextMove = move.moveIA1(mySubmarine, earthMap, board);
-
-            // 1/ Analyse opponent orders for trying to locate him
-            // -> 1/ if opponent torpedo is sending-> lock range (this range follow opponent new move)
-            boolean opponentSentTorpedo = locateOpponent.readIfOpponentSentTorpedo(mySubmarine.getOpponentOrders());
-            // if opponent has send torpedo -> locate range move when opponent re-load his torpedo
-            if (mySubmarine.getListOpponentPositionAfterTorpedo() != null) {
-                locateOpponent.updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board);
+            // ********** 3   **** Locate opponent ************************************************************************:
+                //todo carefull if opponent SILENCE
+            // ----------------------------------- after torpedo -----------------------------------------------------
+            if (mySubmarine.getListOpponentPositionAfterTorpedo() != null) { // update with his next move
+                locateOpponent.updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board); // record result list on mySubmarine
             }
-            // if opponent send torpedo
-            if (opponentSentTorpedo) {
+            if (isOpponentSentTorpedo) {
                 locateOpponent.createRangeCellOfOpponentPositionWhenSendTorpedo(mySubmarine, board);
             }
+            // --------------------------------------------------------------------------------------------------------
+
+            // *********** 4 ****** MySubmarine Check **********************************************************************
+            // --------------------------------------- torpedo -----------------------------------------------------
             // check if i can fire torpedo following my position (my torpedo loaded and opponent locate list)
             if (mySubmarine.getTorpedoCooldown() == 0 && mySubmarine.getListOpponentPositionAfterTorpedo() != null) {
-                List<Cell> potentialfireList = torpedo.mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySubmarine.getListOpponentPositionAfterTorpedo(), mySubmarine);
-                // remove cell around me
-                List<Cell> safeList = utils.createSafeCellListAroundMe(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
-                // remove safeList of potentialFireList
-                List<Cell> fireList = utils.mixTwoListAndKeepEqualOnCellOut(potentialfireList, safeList);
-                // record list on submarine
-                mySubmarine.setTorpedoFireList(fireList);
-                // check
-                Long countFirecell = fireList.stream().count();
-                System.err.println("Possibility of fire on: " + countFirecell);
-//                System.err.println("Possibility of fire on: " + fireList.toString());
-                if (!fireList.isEmpty()) {
-                    fireTorpedo = true;
-                }
+                fireTorpedo = torpedo.canIFireTorpedo(mySubmarine, board);
             }
-
-
-
-
-            // if torpedo is load -> create list torperdo range (without map limit and earth)
-            List<Cell> torpedorange = torpedo.createCellListTorpedoRangeWithoutXYPosition(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
-            mySubmarine.setListTorpedoRange(torpedorange);
+            // check if my torpedo is loaded
             if (mySubmarine.getTorpedoCooldown() == 0) {
                 loadedTorpedo = true;
                 // check
-                System.err.println("my Torpedo load and list range ok");
+                System.err.println("Torpedo loaded and list range ok");
             }
+            // add torpedo order if possible
+            if (fireTorpedo && loadedTorpedo) {
+                fire = true;
+            }
+            // --------------------------------------------------------------------------------------------------------
+
+            // ********** 5   **** Action ***********************************************************************************:
+            // think for next move
+            String nextMove = move.moveIA1(mySubmarine, earthMap, board);
 
             // if mySubmarin make SURFACE persist last mySubmarine position on object board
             if (nextMove == "SURFACE") {listCellAlreadyVisited = new ArrayList<>(); }
             listCellAlreadyVisited.add(myMoveCell);
             board.setListCellAlreadyVisited(listCellAlreadyVisited);
 
-            // add torpedo order if possible
-            if (fireTorpedo && loadedTorpedo) {
-                fire = true;
 
-            }
             // add fire on move order
             if (fire) {
                 // get random cell on fireList
@@ -158,9 +144,7 @@ class Player {
                 // order for move
                 System.out.println(nextMove);
             }
-
-
-
+            
             // print submarines info
             System.err.println("My submarine: " + mySubmarine.toString());
             System.err.println("Opponent submarine: " + opponentSubmarine.toString());
@@ -355,7 +339,7 @@ class LocateOpponent {
         mySubmarine.setOpponentTorpedoExplosion(opponentTorpedoCell);
 
         // create list of position where opponent is (after he has send torpedo)
-        List<Cell> listPresenceOpponentTorpedo = torpedo.createCellListTorpedoRangeWithoutXYPosition(opponentTorpedoCell.getX(), opponentTorpedoCell.getY(),board);
+        List<Cell> listPresenceOpponentTorpedo = torpedo.createCellListTorpedoRange(opponentTorpedoCell.getX(), opponentTorpedoCell.getY(),board);
 
         // record presence opponent list on mySubmarine
         mySubmarine.setListOpponentPositionAfterTorpedo(listPresenceOpponentTorpedo);
@@ -381,7 +365,7 @@ class LocateOpponent {
         System.err.println("new cell center range opp : " + opponentTorpedoCellAfterMove.toString());
 
         // re-center list of presence with opponent next move
-        List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRangeWithoutXYPosition(opponentTorpedoCellAfterMove.getX(), opponentTorpedoCellAfterMove.getY(),board);
+        List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRange(opponentTorpedoCellAfterMove.getX(), opponentTorpedoCellAfterMove.getY(),board);
 
         // re-record new range posibility of opponent presence
         mySubmarine.setListOpponentPositionAfterTorpedo(listNewPresenceOpponentTorpedo);
@@ -404,7 +388,7 @@ class Torpedo {
      * @param board
      * @return
      */
-    public List<Cell> createCellListTorpedoRangeWithoutXYPosition(int x, int y, Board board) {
+    public List<Cell> createCellListTorpedoRange(int x, int y, Board board) {
         List<Cell> listCellTorpedoRange = new ArrayList<>();
         int rangeMinX = -4;
         int rangeMaxX = 4;
@@ -452,11 +436,11 @@ class Torpedo {
         List<Cell> listWithoutEndOfMap = utils.removeEndOfMap(listCellTorpedoRange, board);
         // remove earth on last list
         List<Cell> listWithoutEndOfMapAndEarth = utils.removeEarthCell(listWithoutEndOfMap, board);
-        // remove xy position
-        List<Cell> listWithoutEndOfMapAndEarthAndXY = listWithoutEndOfMapAndEarth;
+        // remove center position
+        List<Cell> listWithoutEndOfMapAndEarthAndCenterCell = listWithoutEndOfMapAndEarth;
         for (int i = 0; i < listWithoutEndOfMapAndEarth.size(); i++) {
             if (listWithoutEndOfMapAndEarth.get(i).getX() == x && listWithoutEndOfMapAndEarth.get(i).getY() == y) {
-                listWithoutEndOfMapAndEarthAndXY.remove(i);
+                listWithoutEndOfMapAndEarthAndCenterCell.remove(i);
             }
 
         }
@@ -464,7 +448,7 @@ class Torpedo {
 //        System.err.println("my torpedo range list " + listWithoutEndOfMapAndEarthAndXY.toString());
 //        long nbrCasePosible = listWithoutEndOfMapAndEarthAndXY.stream().count();
 //        System.err.println("my taget case possible(torp): " + nbrCasePosible);
-        return listWithoutEndOfMapAndEarthAndXY;
+        return listWithoutEndOfMapAndEarthAndCenterCell;
     }
 
     public List<Cell> mixRangePossibilityAfterTorpedoWithMyRangeTorpedo (List<Cell> inputRangeListAfterTorpedo, Submarine mySubmarine) {
@@ -483,6 +467,24 @@ class Torpedo {
         // check
 //        System.err.println("Possibility of fire on: " + possibilityOfTorpedoFire.toString());
         return possibilityOfTorpedoFire;
+    }
+
+    public boolean canIFireTorpedo(Submarine mySubmarine, Board board) {
+        List<Cell> potentialfireList = mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySubmarine.getListOpponentPositionAfterTorpedo(), mySubmarine);
+        // remove cell around me
+        utils.createSafeCellListAroundMe(mySubmarine, board);
+        // remove safeList of potentialFireList
+        List<Cell> fireList = utils.removeCellsOnList(potentialfireList, mySubmarine.getSafeListOfCellAroundMe());
+        mySubmarine.setTorpedoFireList(fireList);
+        // check
+        Long countFirecell = fireList.stream().count();
+        System.err.println("Possibility of fire on: " + countFirecell);
+//                System.err.println("Possibility of fire on: " + fireList.toString());
+        if (!fireList.isEmpty()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 
@@ -533,8 +535,10 @@ class Utils {
         return sectorList;
     }
 
-    public List<Cell> createSafeCellListAroundMe(int x, int y, Board board) {
+    public void createSafeCellListAroundMe(Submarine mySubmarine, Board board) {
         List<Cell> listSafeCell = new ArrayList<>();
+        int x = mySubmarine.getPositionX();
+        int y = mySubmarine.getPositionY();
         // record My position
         Cell myPositionCell = new Cell(x,y,null);
 
@@ -562,9 +566,12 @@ class Utils {
         // remove cell out map
         List<Cell> listWithoutEndOfMap = removeEndOfMap(listSafeCell, board);
 
+        // record on my submarine
+        mySubmarine.setSafeListOfCellAroundMe(listWithoutEndOfMap);
+
         // check
 //        System.err.println("safe list: " + listWithoutEndOfMap.toString());
-        return listWithoutEndOfMap;
+
     }
 
     public List<Cell> removeEndOfMap(List<Cell> list, Board board) {
@@ -673,21 +680,27 @@ class Utils {
         return cell;
     }
 
-    public List<Cell> mixTwoListAndKeepEqualOnCellOut (List<Cell> potentialFireList, List<Cell> safeList) {
-        List<Cell> newPotentialFireList = new ArrayList<>();
-        for (int i = 0; i < potentialFireList.size(); i++) {
-            newPotentialFireList.add(potentialFireList.get(i));
+    /**
+     * For remove cell if there is present on fullList
+     * @param fullList
+     * @param cellListToRemoveIfPresent
+     * @return full list without cell on second list(if present)
+     */
+    public List<Cell> removeCellsOnList(List<Cell> fullList, List<Cell> cellListToRemoveIfPresent) {
+        List<Cell> resultList = new ArrayList<>();
+        for (int i = 0; i < fullList.size(); i++) {
+            resultList.add(fullList.get(i));
         }
 
-        for (int i = 0; i < potentialFireList.size() ; i++) {
-            for (int j = 0; j < safeList.size(); j++) {
-                if (potentialFireList.get(i).getX() == safeList.get(j).getX() &&
-                        potentialFireList.get(i).getY() == safeList.get(j).getY()) {
-                    newPotentialFireList.remove(potentialFireList.get(i));
+        for (int i = 0; i < fullList.size() ; i++) {
+            for (int j = 0; j < cellListToRemoveIfPresent.size(); j++) {
+                if (fullList.get(i).getX() == cellListToRemoveIfPresent.get(j).getX() &&
+                        fullList.get(i).getY() == cellListToRemoveIfPresent.get(j).getY()) {
+                    resultList.remove(fullList.get(i));
                 }
             }
         }
-        return newPotentialFireList;
+        return resultList;
     }
 }
 
