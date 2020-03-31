@@ -144,7 +144,7 @@ class Player {
                 // order for move
                 System.out.println(nextMove);
             }
-            
+
             // print submarines info
             System.err.println("My submarine: " + mySubmarine.toString());
             System.err.println("Opponent submarine: " + opponentSubmarine.toString());
