@@ -21,6 +21,7 @@ class Player {
         String chargeSonar = "SONAR";
         String chargeTorpedo = "TORPEDO";
         String chargeSilence = "SILENCE";
+        String sentSonar = "SONAR ";
         boolean isOpponentSentTorpedo = false;
         boolean loadedTorpedo = false;
         boolean loadedSonar = false;
@@ -65,8 +66,10 @@ class Player {
 
         // ********* 2 **** Game loop********************************************************************************************:
         while (true) {
-            boolean fireTorpedo = false;
-            boolean fire = false;
+            boolean fireTorpedoFollowingOppTorp = false;
+            boolean fireFollowingTorpedoFeedback = false;
+            boolean lunchSonar = false;
+            boolean fireFollowingSonarFeedback = false;
             int x = in.nextInt();
             mySubmarine.setPositionX(x);
             int y = in.nextInt();
@@ -110,16 +113,23 @@ class Player {
             // --------------------------------------------------------------------------------------------------------
 
             // *********** 4 ****** MySubmarine Check **********************************************************************
+            // sonar feedback
+            //check
+            System.err.println("retour sonar: " + mySubmarine.getSonarResult());
+
+            // check mySector position
+            int mySectorId = utils.findMyPositionSector(mySubmarine, board);
+            mySubmarine.setMySector(mySectorId);
+
             // check if i can fire torpedo following my position (my torpedo loaded and opponent locate list)
             if (mySubmarine.getTorpedoCooldown() == 0 && mySubmarine.getListOpponentPositionAfterTorpedo() != null) {
-                fireTorpedo = torpedo.canIFireTorpedo(mySubmarine, board);
+                fireTorpedoFollowingOppTorp = torpedo.canIFireTorpedo(mySubmarine, board);
             }
             // check if my torpedo is loaded
             if (mySubmarine.getTorpedoCooldown() == 0) {
                 loadedTorpedo = true;
                 // check
                 System.err.println("Torpedo loaded and list range ok");
-
             }
             // check if my sonar is loaded
             if (mySubmarine.getSonarCooldown() == 0) {
@@ -132,16 +142,29 @@ class Player {
                 loadedSilence = true;
                 //check
                 System.err.println("Silence loaded");
+                // lunch sonar in my sector
+                if (mySubmarine.getSonarCooldown() == 0) {
+                    lunchSonar = true;
+                    //check
+                    System.err.println("sonar can sent!");
+                }
             }
             // add torpedo order if possible
-            if (fireTorpedo && loadedTorpedo) {
-                fire = true;
+            if (fireTorpedoFollowingOppTorp && loadedTorpedo) {
+                fireFollowingTorpedoFeedback = true;
                 loadedTorpedo = false;
             }
+
 
             // ********** 5   **** Action ***********************************************************************************:
             // think for next move
             String nextMove = move.moveIA1(mySubmarine, earthMap, board);
+
+            // check if opponent is in my  sector with sonar feedback
+            //check
+            if (mySubmarine.getSonarResult().equals("Y")) {
+                fireFollowingSonarFeedback = true;
+            }
 
             // if mySubmarin make SURFACE persist last mySubmarine position on object board
             if (nextMove == "SURFACE") {listCellAlreadyVisited = new ArrayList<>(); }
@@ -151,29 +174,72 @@ class Player {
             if (nextMove != "SURFACE" && !loadedTorpedo) {
                 nextMove = nextMove + chargeTorpedo;
             }
-            else if (nextMove != "SURFACE" && loadedTorpedo && !loadedSonar) {
+            if (nextMove != "SURFACE" && loadedTorpedo && !loadedSonar) {
                 nextMove = nextMove + chargeSonar;
             }
-            else if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar) {
+            if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar && loadedSilence && lunchSonar) {
+                //check
+                System.err.println("passage sonar order");
+                // lunch sonar
+                nextMove = sentSonar + String.valueOf(mySubmarine.getMySector()) + "|" + nextMove;
+                loadedSonar = false;
+            }
+            if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar) {
                 nextMove = nextMove + chargeSilence;
             }
+            // check
+                System.err.println("fireFollowingTorpedoFeedback: " + fireFollowingTorpedoFeedback);
+                System.err.println("fireFollowingSonarFeedback: " + fireFollowingSonarFeedback);
 
-            // add fire on move order
-            if (fire) {
+
+
+            // add fire on move order following opponent fire
+            if (fireFollowingTorpedoFeedback && !fireFollowingSonarFeedback) {
                 // get random cell on fireList
                 Cell randomfireTorpedo = utils.randomCellOnList(mySubmarine.getTorpedoFireList());
                 String addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
                 String nextMoveFire = addfireTorpedoString + "|" + nextMove;
                 // order of move and fire
                 System.out.println(nextMoveFire);
-            } else {
+            }
+            // add fire on move order following sonar
+            else if (fireFollowingSonarFeedback && !fireFollowingTorpedoFeedback){
+                // get random cell on sector without safe list around me and only my torpedo range
+                List<Cell> mySectorCellList = new ArrayList<>();
+                for (int i = 0; i < board.getListSecteurs().size(); i++) {
+                    if(board.getListSecteurs().get(i).getId() == mySubmarine.getMySector()) {
+                        mySectorCellList = board.getListSecteurs().get(i).getListCell();
+                    }
+                }
+                // list of safe cell (around me)
+                utils.createSafeCellListAroundMe(mySubmarine, board);
+                List<Cell> mySafeCellList = mySubmarine.getSafeListOfCellAroundMe();
+                // remove safe cell to mysecto cells
+                List<Cell> mySectorWithoutsafeList = utils.removeCellsOnList(mySectorCellList, mySafeCellList);
+                // get my range torpedo list
+                // keep only forFireList - myrangeTorpedo -> to verify
+                List<Cell> fireList = torpedo.mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySectorWithoutsafeList,mySubmarine);
+                // check
+//                System.err.println("potential fire following sonar: " + fireList.toString());
+                System.err.println("potential fire following sonar: " + fireList.stream().count());
+                // get random cell on fireList
+                Cell randomfireTorpedo = utils.randomCellOnList(fireList);
+                String addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
+                String nextMoveFire = addfireTorpedoString + "|" + nextMove;
+                // order of move and fire
+                System.out.println(nextMoveFire);
+                loadedTorpedo = false;
+
+            }
+            // no fire -> just move
+            else {
                 // order for move
                 System.out.println(nextMove);
             }
             
             // print submarines info
-            System.err.println("My submarine: " + mySubmarine.toString());
-            System.err.println("Opponent submarine: " + opponentSubmarine.toString());
+//            System.err.println("My submarine: " + mySubmarine.toString());
+//            System.err.println("Opponent submarine: " + opponentSubmarine.toString());
         }
     }
 
@@ -271,9 +337,6 @@ class Move {
         // random on cell with last list
         if (!listWithoutMapLimitEarthAndAlreadyVisited.isEmpty()) {
             Cell cellToMoveRandom = utils.randomCellOnList(listWithoutMapLimitEarthAndAlreadyVisited);
-
-            // record my next move on mySubmarine
-            mySubmarine.setMyNextMove(cellToMoveRandom);
 
             // move to random cell
             if (cellToMoveRandom.getX() != -10) {
@@ -706,6 +769,23 @@ class Utils {
         return cell;
     }
 
+    public int findMyPositionSector(Submarine mySubmarine, Board board) {
+        List<Sector> listSectors = board.getListSecteurs();
+        Cell myPositionCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null);
+        int mySector = 0;
+
+        for (Sector sector: listSectors) {
+            for (Cell cell: sector.getListCell()) {
+                if (cell.getX() == myPositionCell.getX() && cell.getY() == myPositionCell.getY()) {
+                    mySector = sector.getId();
+                }
+            }
+        }
+        // check
+        System.err.println("my secteur: " + mySector);
+        return mySector;
+    }
+
     /**
      * For remove cell if there is present on fullList
      * @param fullList
@@ -736,6 +816,7 @@ class Submarine {
     private int id;
     private int positionX;
     private int positionY;
+    private int mySector;
     private int life;
     private int torpedoCooldown;
     private int sonarCooldown;
@@ -748,17 +829,17 @@ class Submarine {
     private List<Cell> listOpponentPositionAfterTorpedo;
     private Cell opponentTorpedoExplosion;
     private List<Cell> torpedoFireList;
-    private Cell myNextMove;
 
 
     // constructor
     public Submarine() {
     }
 
-    public Submarine(int id, int positionX, int positionY, int life, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove) {
+    public Submarine(int id, int positionX, int positionY, int mySector, int life, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList) {
         this.id = id;
         this.positionX = positionX;
         this.positionY = positionY;
+        this.mySector = mySector;
         this.life = life;
         this.torpedoCooldown = torpedoCooldown;
         this.sonarCooldown = sonarCooldown;
@@ -771,7 +852,6 @@ class Submarine {
         this.listOpponentPositionAfterTorpedo = listOpponentPositionAfterTorpedo;
         this.opponentTorpedoExplosion = opponentTorpedoExplosion;
         this.torpedoFireList = torpedoFireList;
-        this.myNextMove = myNextMove;
     }
 
     // getters setters
@@ -792,6 +872,12 @@ class Submarine {
     }
     public void setPositionY(int positionY) {
         this.positionY = positionY;
+    }
+    public int getMySector() {
+        return mySector;
+    }
+    public void setMySector(int mySector) {
+        this.mySector = mySector;
     }
     public int getLife() {
         return life;
@@ -865,12 +951,6 @@ class Submarine {
     public void setTorpedoFireList(List<Cell> torpedoFireList) {
         this.torpedoFireList = torpedoFireList;
     }
-    public Cell getMyNextMove() {
-        return myNextMove;
-    }
-    public void setMyNextMove(Cell myNextMove) {
-        this.myNextMove = myNextMove;
-    }
 
     // to string
     @Override
@@ -879,6 +959,7 @@ class Submarine {
                 "id=" + id +
                 ", positionX=" + positionX +
                 ", positionY=" + positionY +
+                ", mySector=" + mySector +
                 ", life=" + life +
                 ", torpedoCooldown=" + torpedoCooldown +
                 ", sonarCooldown=" + sonarCooldown +
@@ -891,10 +972,8 @@ class Submarine {
                 ", listOpponentPositionAfterTorpedo=" + listOpponentPositionAfterTorpedo +
                 ", opponentTorpedoExplosion=" + opponentTorpedoExplosion +
                 ", torpedoFireList=" + torpedoFireList +
-                ", myNextMove=" + myNextMove +
                 '}';
     }
-
 }
 
 class Cell {
