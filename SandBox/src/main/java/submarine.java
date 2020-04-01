@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.StrictMath.abs;
 
@@ -74,7 +75,7 @@ class Player {
             mySubmarine.setPositionX(x);
             int y = in.nextInt();
             mySubmarine.setPositionY(y);
-            Cell myMoveCell= new Cell(x,y,null);
+            Cell myMoveCell= new Cell(x,y,null,null);
             int myLife = in.nextInt();
             mySubmarine.setLife(myLife);
             int oppLife = in.nextInt();
@@ -158,7 +159,10 @@ class Player {
 
             // ********** 5   **** Action ***********************************************************************************:
             // think for next move
-            String nextMove = move.moveIA1(mySubmarine, earthMap, board);
+            // first solution (random)
+//            String nextMove = move.moveIA1(mySubmarine, board);
+            // Second solution (to a point)
+            String nextMove = move.moveIA2(mySubmarine, board);
 
             // check if opponent is in my  sector with sonar feedback
             //check
@@ -205,12 +209,7 @@ class Player {
             // add fire on move order following sonar
             else if (fireFollowingSonarFeedback && !fireFollowingTorpedoFeedback){
                 // get random cell on sector without safe list around me and only my torpedo range
-                List<Cell> mySectorCellList = new ArrayList<>();
-                for (int i = 0; i < board.getListSecteurs().size(); i++) {
-                    if(board.getListSecteurs().get(i).getId() == mySubmarine.getMySector()) {
-                        mySectorCellList = board.getListSecteurs().get(i).getListCell();
-                    }
-                }
+                List<Cell> mySectorCellList = utils.findSectorCellWithPosition(mySubmarine, board);
                 // list of safe cell (around me)
                 utils.createSafeCellListAroundMe(mySubmarine, board);
                 List<Cell> mySafeCellList = mySubmarine.getSafeListOfCellAroundMe();
@@ -290,7 +289,7 @@ class Deploy {
             for (int j = 0; j < line.length(); j++) {
                 oneChar = line.charAt(j);
                 if (oneChar == 'x') {
-                    Cell earthCell = new Cell(j,i, null);
+                    Cell earthCell = new Cell(j,i, null,null);
                     // add earthCell on list of earth on board object
                     listCellContainsEarth.add(earthCell);
                     board.setListCellEarth(listCellContainsEarth);
@@ -311,19 +310,9 @@ class Move {
     /**
      * First moving IA random move
      */
-    public String moveIA1(Submarine mySubmarine, HashMap<Integer, String> earthMap, Board board) {
+    public String moveIA1(Submarine mySubmarine, Board board) {
         // list of future move (4 cell auround mySubmarine position)
-        List<Cell> listAllPossibleMove = new ArrayList<>();
-
-        // create list of possible move cell
-        Cell northCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY() - 1, "N ");
-        listAllPossibleMove.add(northCell);
-        Cell southCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY() + 1, "S ");
-        listAllPossibleMove.add(southCell);
-        Cell westCell = new Cell(mySubmarine.getPositionX() - 1, mySubmarine.getPositionY(), "W ");
-        listAllPossibleMove.add(westCell);
-        Cell estCell = new Cell(mySubmarine.getPositionX() + 1, mySubmarine.getPositionY(), "E ");
-        listAllPossibleMove.add(estCell);
+        List<Cell> listAllPossibleMove = getListOfPossibleMove(mySubmarine);
 
         // remove cells out of map
         List<Cell> listWithoutMapLimit = utils.removeEndOfMap(listAllPossibleMove, board);
@@ -349,7 +338,96 @@ class Move {
         return "SURFACE";
     }
 
+    /**
+     * go t2 cell 2,2
+     * @param mySubmarine
+     * @param board
+     * @return
+     */
+    public String moveIA2(Submarine mySubmarine, Board board) {
+        Cell myPositionCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
+        Cell destinationCell = new Cell(0,14,null,null);
+
+        // list of future move (4 cell auround mySubmarine position)
+        List<Cell> listAllPossibleMove = getListOfPossibleMove(mySubmarine);
+
+        // remove cells out of map
+        List<Cell> listWithoutMapLimit = utils.removeEndOfMap(listAllPossibleMove, board);
+
+        // remove earth on last list
+        List<Cell> listWithoutMapLimitAndEarth = utils.removeEarthCell(listWithoutMapLimit, board);
+
+        // remove alreadyVisit cell on last list
+        List<Cell> listWithoutMapLimitEarthAndAlreadyVisited = utils.removeAlreadyVisitedCell(listWithoutMapLimitAndEarth, board);
+
+        // to each cell add distance for destination
+        for (Cell cell: listWithoutMapLimitEarthAndAlreadyVisited) {
+            Integer distance = utils.distanceFromCell(myPositionCell, destinationCell);
+            cell.setDistanceToDestinationCell(distance);
+        }
+        // calc better path
+        if (!listWithoutMapLimitEarthAndAlreadyVisited.isEmpty()) {
+//            Cell betterPathCell = new Cell();
+//            Integer min = 2000;
+//            for (int i = 0; i < listWithoutMapLimitEarthAndAlreadyVisited.size(); i++) {
+//                if (listWithoutMapLimitEarthAndAlreadyVisited.get(i).getDistanceToDestinationCell() < min) {
+//                    betterPathCell.setX(listWithoutMapLimitEarthAndAlreadyVisited.get(i).getX());
+//                    betterPathCell.setY(listWithoutMapLimitEarthAndAlreadyVisited.get(i).getY());
+//                    betterPathCell.setCardinalPoint(listWithoutMapLimitEarthAndAlreadyVisited.get(i).getCardinalPoint());
+//                    System.err.println("min: " + listWithoutMapLimitEarthAndAlreadyVisited.get(i).getDistanceToDestinationCell());
+//                }
+//            }
+
+            Comparator<Cell> comparator = Comparator.comparing( Cell::getDistanceToDestinationCell);
+            Cell betterPathCell = listWithoutMapLimitEarthAndAlreadyVisited.stream()
+                    .min(comparator).get();
+            // if 3 choice
+//            if (listWithoutMapLimitEarthAndAlreadyVisited.size() > 2) {
+//                // get 2eme
+//                betterPathCell = listWithoutMapLimitEarthAndAlreadyVisited.get(1);
+//                //get random for fun
+////                betterPathCell = utils.randomCellOnList(listWithoutMapLimitEarthAndAlreadyVisited);
+//            }
+            return "MOVE " + betterPathCell.getCardinalPoint();
+        } else {
+            return "SURFACE";
+        }
+
+    }
+
+    public List<Cell> getListOfPossibleMove(Submarine mySubmarine) {
+        // list of future move (4 cell auround mySubmarine position)
+        List<Cell> listAllPossibleMove = new ArrayList<>();
+
+        // create list of possible move cell
+        Cell northCell = new Cell();
+        northCell.setX(mySubmarine.getPositionX());
+        northCell.setY(mySubmarine.getPositionY() - 1);
+        northCell.setCardinalPoint("N ");
+        listAllPossibleMove.add(northCell);
+
+        Cell southCell = new Cell();
+        southCell.setX(mySubmarine.getPositionX());
+        southCell.setY(mySubmarine.getPositionY() + 1);
+        southCell.setCardinalPoint("S ");
+        listAllPossibleMove.add(southCell);
+
+        Cell westCell = new Cell();
+        westCell.setX(mySubmarine.getPositionX() - 1);
+        westCell.setY(mySubmarine.getPositionY());
+        westCell.setCardinalPoint("W ");
+        listAllPossibleMove.add(westCell);
+
+        Cell estCell = new Cell();
+        estCell.setX(mySubmarine.getPositionX() + 1);
+        estCell.setY(mySubmarine.getPositionY());
+        estCell.setCardinalPoint("E ");
+        listAllPossibleMove.add(estCell);
+
+        return listAllPossibleMove;
+    }
 }
+
 
 class LocateOpponent {
     Utils utils = new Utils();
@@ -488,7 +566,7 @@ class Torpedo {
             // add line
             for (int i = rangeMinX; i <= rangeMaxX ; i++) {
                 // create centerCell
-                Cell leftEndCell = new Cell(x + i, centerCellY, null);
+                Cell leftEndCell = new Cell(x + i, centerCellY, null,null);
                 listCellTorpedoRange.add(leftEndCell);
                 countChangeSide++;
             }
@@ -578,13 +656,14 @@ class Torpedo {
 }
 
 class Utils {
+
     /**
      * For count distance with 2 cells with cardinal move
      * @param c
      * @param other
      * @return int
      */
-    public static int distanceFromCell(Cell c, Cell other){
+    public int distanceFromCell(Cell c, Cell other){
         return abs(c.getX() - other.getX()) + abs(c.getY() - other.getY());
     }
 
@@ -629,27 +708,27 @@ class Utils {
         int x = mySubmarine.getPositionX();
         int y = mySubmarine.getPositionY();
         // record My position
-        Cell myPositionCell = new Cell(x,y,null);
+        Cell myPositionCell = new Cell(x,y,null, null);
 
         listSafeCell.add(myPositionCell);
         // record cardinal position cell
-        Cell northCell = new Cell(x, y -1, null);
+        Cell northCell = new Cell(x, y -1, null, null);
         listSafeCell.add(northCell);
-        Cell southCell = new Cell(x, y +1, null);
+        Cell southCell = new Cell(x, y +1, null, null);
         listSafeCell.add(southCell);
-        Cell westCell = new Cell(x - 1, y, null);
+        Cell westCell = new Cell(x - 1, y, null, null);
         listSafeCell.add(westCell);
-        Cell estCell = new Cell(x + 1, y, null);
+        Cell estCell = new Cell(x + 1, y, null, null);
         listSafeCell.add(estCell);
 
         // record diagonal position
-        Cell northEstCell = new Cell(x + 1, y - 1, null);
+        Cell northEstCell = new Cell(x + 1, y - 1, null, null);
         listSafeCell.add(northEstCell);
-        Cell northWestCell = new Cell(x - 1, y - 1, null);
+        Cell northWestCell = new Cell(x - 1, y - 1, null, null);
         listSafeCell.add(northWestCell);
-        Cell southEstCell = new Cell(x + 1, y + 1, null);
+        Cell southEstCell = new Cell(x + 1, y + 1, null, null);
         listSafeCell.add(southEstCell);
-        Cell southWestCell = new Cell(x - 1, y + 1, null);
+        Cell southWestCell = new Cell(x - 1, y + 1, null, null);
         listSafeCell.add(southWestCell);
 
         // remove cell out map
@@ -733,7 +812,7 @@ class Utils {
 
         for (int i =0; i < 5; i++) {
             for(int j = 0; j < 5 ;j++) {
-                Cell cell = new Cell(xMin + j, yMin + i, null);
+                Cell cell = new Cell(xMin + j, yMin + i, null, null);
                 listCellSector.add(cell);
                 if (i == 4 && j == 4) {
                     sector.setMaxCell(cell);
@@ -771,7 +850,7 @@ class Utils {
 
     public int findMyPositionSector(Submarine mySubmarine, Board board) {
         List<Sector> listSectors = board.getListSecteurs();
-        Cell myPositionCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null);
+        Cell myPositionCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
         int mySector = 0;
 
         for (Sector sector: listSectors) {
@@ -807,6 +886,16 @@ class Utils {
             }
         }
         return resultList;
+    }
+
+    public List<Cell> findSectorCellWithPosition(Submarine mySubmarine, Board board) {
+        List<Cell> result = new ArrayList<>();
+        for (int i = 0; i < board.getListSecteurs().size(); i++) {
+            if(board.getListSecteurs().get(i).getId() == mySubmarine.getMySector()) {
+                result = board.getListSecteurs().get(i).getListCell();
+            }
+        }
+        return result;
     }
 }
 
@@ -980,15 +1069,17 @@ class Cell {
     private int x;
     private int y;
     private String cardinalPoint;
+    private Integer distanceToDestinationCell;
 
     // constructor
     public Cell() {
     }
 
-    public Cell(int x, int y, String cardinalPoint) {
+    public Cell(int x, int y, String cardinalPoint, Integer distanceToDestinationCell) {
         this.x = x;
         this.y = y;
         this.cardinalPoint = cardinalPoint;
+        this.distanceToDestinationCell = distanceToDestinationCell;
     }
 
     // getters setters
@@ -1010,6 +1101,12 @@ class Cell {
     public void setCardinalPoint(String cardinalPoint) {
         this.cardinalPoint = cardinalPoint;
     }
+    public Integer getDistanceToDestinationCell() {
+        return distanceToDestinationCell;
+    }
+    public void setDistanceToDestinationCell(Integer distanceToDestinationCell) {
+        this.distanceToDestinationCell = distanceToDestinationCell;
+    }
 
     // to string
     @Override
@@ -1018,6 +1115,7 @@ class Cell {
                 "x=" + x +
                 ", y=" + y +
                 ", cardinalPoint='" + cardinalPoint + '\'' +
+                ", distanceToDestinationCell=" + distanceToDestinationCell +
                 '}';
     }
 }
