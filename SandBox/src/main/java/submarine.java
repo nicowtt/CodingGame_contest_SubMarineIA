@@ -18,7 +18,13 @@ class Player {
         Torpedo torpedo = new Torpedo();
         LocateOpponent locateOpponent = new LocateOpponent();
         List<Cell> listCellAlreadyVisited = new ArrayList<>();
+        String chargeSonar = "SONAR";
+        String chargeTorpedo = "TORPEDO";
+        String chargeSilence = "SILENCE";
         boolean isOpponentSentTorpedo = false;
+        boolean loadedTorpedo = false;
+        boolean loadedSonar = false;
+        boolean loadedSilence = false;
 
         Scanner in = new Scanner(System.in);
         int width = in.nextInt();
@@ -60,7 +66,6 @@ class Player {
         // ********* 2 **** Game loop********************************************************************************************:
         while (true) {
             boolean fireTorpedo = false;
-            boolean loadedTorpedo = false;
             boolean fire = false;
             int x = in.nextInt();
             mySubmarine.setPositionX(x);
@@ -105,7 +110,6 @@ class Player {
             // --------------------------------------------------------------------------------------------------------
 
             // *********** 4 ****** MySubmarine Check **********************************************************************
-            // --------------------------------------- torpedo -----------------------------------------------------
             // check if i can fire torpedo following my position (my torpedo loaded and opponent locate list)
             if (mySubmarine.getTorpedoCooldown() == 0 && mySubmarine.getListOpponentPositionAfterTorpedo() != null) {
                 fireTorpedo = torpedo.canIFireTorpedo(mySubmarine, board);
@@ -115,12 +119,25 @@ class Player {
                 loadedTorpedo = true;
                 // check
                 System.err.println("Torpedo loaded and list range ok");
+
+            }
+            // check if my sonar is loaded
+            if (mySubmarine.getSonarCooldown() == 0) {
+                loadedSonar = true;
+                //check
+                System.err.println("Sonar loaded");
+            }
+            // check if silence is loaded
+            if (mySubmarine.getSilenceCooldown() == 0) {
+                loadedSilence = true;
+                //check
+                System.err.println("Silence loaded");
             }
             // add torpedo order if possible
             if (fireTorpedo && loadedTorpedo) {
                 fire = true;
+                loadedTorpedo = false;
             }
-            // --------------------------------------------------------------------------------------------------------
 
             // ********** 5   **** Action ***********************************************************************************:
             // think for next move
@@ -130,7 +147,16 @@ class Player {
             if (nextMove == "SURFACE") {listCellAlreadyVisited = new ArrayList<>(); }
             listCellAlreadyVisited.add(myMoveCell);
             board.setListCellAlreadyVisited(listCellAlreadyVisited);
-
+            // if my submarine move -> Charge torpedo first and sonar after and silence after
+            if (nextMove != "SURFACE" && !loadedTorpedo) {
+                nextMove = nextMove + chargeTorpedo;
+            }
+            else if (nextMove != "SURFACE" && loadedTorpedo && !loadedSonar) {
+                nextMove = nextMove + chargeSonar;
+            }
+            else if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar) {
+                nextMove = nextMove + chargeSilence;
+            }
 
             // add fire on move order
             if (fire) {
@@ -144,7 +170,7 @@ class Player {
                 // order for move
                 System.out.println(nextMove);
             }
-
+            
             // print submarines info
             System.err.println("My submarine: " + mySubmarine.toString());
             System.err.println("Opponent submarine: " + opponentSubmarine.toString());
@@ -251,10 +277,10 @@ class Move {
 
             // move to random cell
             if (cellToMoveRandom.getX() != -10) {
-                if (cellToMoveRandom.getCardinalPoint() == "N ") { return "MOVE " + cellToMoveRandom.getCardinalPoint() + "TORPEDO"; }
-                if (cellToMoveRandom.getCardinalPoint() == "E ") { return "MOVE " + cellToMoveRandom.getCardinalPoint() + "TORPEDO"; }
-                if (cellToMoveRandom.getCardinalPoint() == "W ") { return "MOVE " + cellToMoveRandom.getCardinalPoint() + "TORPEDO"; }
-                if (cellToMoveRandom.getCardinalPoint() == "S ") { return "MOVE " + cellToMoveRandom.getCardinalPoint() + "TORPEDO"; }
+                if (cellToMoveRandom.getCardinalPoint() == "N ") { return "MOVE " + cellToMoveRandom.getCardinalPoint(); }
+                if (cellToMoveRandom.getCardinalPoint() == "E ") { return "MOVE " + cellToMoveRandom.getCardinalPoint(); }
+                if (cellToMoveRandom.getCardinalPoint() == "W ") { return "MOVE " + cellToMoveRandom.getCardinalPoint(); }
+                if (cellToMoveRandom.getCardinalPoint() == "S ") { return "MOVE " + cellToMoveRandom.getCardinalPoint(); }
             }
         }
         return "SURFACE";
