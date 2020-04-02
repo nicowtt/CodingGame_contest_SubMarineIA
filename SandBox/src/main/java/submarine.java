@@ -48,7 +48,7 @@ class Player {
         HashMap<Integer, String> earthMap = new HashMap<Integer, String>();
         for (int i = 0; i < height; i++) {
             String line = in.nextLine();
-            earthMap.put(i, line);        
+            earthMap.put(i, line);
         }
         // lunch displayEarthAnalysis method
         deploy.displayEarthAnalysis(earthMap);
@@ -57,7 +57,7 @@ class Player {
 
         // ****** 1 **** Deployement********************************************************************************************:
         // map analyse for deploy
-        String deployPositionString = deploy.deploy(earthMap);
+        String deployPositionString = deploy.deploy1(earthMap);
 
         // order of deploiement
         System.out.println(deployPositionString);
@@ -73,6 +73,7 @@ class Player {
             boolean lunchSonar = false;
             boolean fireFollowingSonarFeedback = false;
             boolean moveNextOnSilence = false;
+            boolean oppPresenceOnMySector = false;
             int x = in.nextInt();
             mySubmarine.setPositionX(x);
             int y = in.nextInt();
@@ -104,8 +105,14 @@ class Player {
             List<Cell> torpedorange = torpedo.createCellListTorpedoRange(mySubmarine.getPositionX(), mySubmarine.getPositionY(), board);
             mySubmarine.setListTorpedoRange(torpedorange);
 
+            // check count fire list in progres
+            if (mySubmarine.getTorpedoFireList() != null) {
+                long countFireList = mySubmarine.getTorpedoFireList().stream().count();
+                // check
+                System.err.println("fire list in progress: " + countFireList);
+            }
+
             // ********** 3   **** Locate opponent ************************************************************************:
-                //todo carefull if opponent SILENCE
             // ----------------------------------- after torpedo -----------------------------------------------------
             if (mySubmarine.getListOpponentPositionAfterTorpedo() != null) { // update with his next move
                 locateOpponent.updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board); // record result list on mySubmarine
@@ -114,7 +121,24 @@ class Player {
                 locateOpponent.createRangeCellOfOpponentPositionWhenSendTorpedo(mySubmarine, board);
             }
             // --------------------------------------------------------------------------------------------------------
+            // check if opponent make surface
+            int opponentSurfaceSector = locateOpponent.checkIfOpponentMakeSurface(mySubmarine, board);
+            if (opponentSurfaceSector != -1) {
+                // compare with my sector position
+                if (opponentSurfaceSector == mySubmarine.getMySector()) {
+                    oppPresenceOnMySector = true;
+                }
+                // todo if not -> move to this sector
+            }
 
+            // check if opponent make silence move
+            boolean opponentMoveSilently = locateOpponent.checkIfOpponentMakeSilence(mySubmarine, board);
+            if (opponentMoveSilently) {
+                // check
+                System.err.println("opponent move silently ");
+                mySubmarine.setOpponentTorpedoExplosion(null);
+                mySubmarine.setTorpedoFireList(null);
+            }
             // *********** 4 ****** MySubmarine Check **********************************************************************
             // sonar feedback
             //check
@@ -173,7 +197,7 @@ class Player {
             // first solution (random)
 //            String nextMove = move.moveIA1(mySubmarine, board);
             // Second solution (to a point)
-            String nextMove = move.moveIA2(mySubmarine, board);
+            String nextMove = move.moveIA3(mySubmarine, board);
 
             // check if opponent is in my  sector with sonar feedback
             //check
@@ -186,12 +210,7 @@ class Player {
             listCellAlreadyVisited.add(myMoveCell);
             board.setListCellAlreadyVisited(listCellAlreadyVisited);
 
-            // if important damage try to move silence (for now only one move on silence)
-            if (nextMove != "SURFACE" && moveNextOnSilence) {
-                //check
-                System.err.println("next move on silence!");
-                nextMove = silence + mySubmarine.getMyNextMove().getCardinalPoint() + 1;
-            }
+
             // if my submarine move -> Charge torpedo first and sonar after and silence after
             if (nextMove != "SURFACE" && !loadedTorpedo && !moveNextOnSilence) {
                 nextMove = nextMove + chargeTorpedo;
@@ -209,56 +228,58 @@ class Player {
             if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar && !moveNextOnSilence) {
                 nextMove = nextMove + chargeSilence;
             }
+            // if important damage try to move silence (for now only one move on silence)
+            if (nextMove != "SURFACE" && moveNextOnSilence && loadedSilence) {
+                //check
+                System.err.println("next move on silence!");
+                moveNextOnSilence = false;
+                loadedSilence = false;
+                nextMove = silence + mySubmarine.getMyNextMove().getCardinalPoint() + 1;
+            }
             // check
-//                System.err.println("fireFollowingTorpedoFeedback: " + fireFollowingTorpedoFeedback);
-//                System.err.println("fireFollowingSonarFeedback: " + fireFollowingSonarFeedback);
+                System.err.println("Fire Following Torpedo Feedback: " + fireFollowingTorpedoFeedback);
+                System.err.println("Fire Following Sonar Feedback: " + fireFollowingSonarFeedback);
+                System.err.println("Opponent presence on my sector: " + oppPresenceOnMySector);
+                System.err.println("--Torpedo loaded: " + loadedTorpedo + " --");
 
-
-
+            // ----------- FIRE ---------- FIRE -------------- FIRE -----------
             // add fire on move order following opponent fire
             if (fireFollowingTorpedoFeedback && !fireFollowingSonarFeedback && !moveNextOnSilence) {
+                System.err.println("passage fire following opp torpedo");
                 // get random cell on fireList
                 Cell randomfireTorpedo = utils.randomCellOnList(mySubmarine.getTorpedoFireList());
                 String addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
                 String nextMoveFire = addfireTorpedoString + "|" + nextMove;
                 // order of move and fire
+                loadedTorpedo = false;
+                System.err.println("------- FIRE  -----------");
                 System.out.println(nextMoveFire);
             }
-            // add fire on move order following sonar
-            else if (fireFollowingSonarFeedback && !fireFollowingTorpedoFeedback && !moveNextOnSilence){
-                // get random cell on sector without safe list around me and only my torpedo range
-                List<Cell> mySectorCellList = utils.findSectorCellWithPosition(mySubmarine, board);
-                // list of safe cell (around me)
-                utils.createSafeCellListAroundMe(mySubmarine, board);
-                List<Cell> mySafeCellList = mySubmarine.getSafeListOfCellAroundMe();
-                // remove safe cell to mysecto cells
-                List<Cell> mySectorWithoutsafeList = utils.removeCellsOnList(mySectorCellList, mySafeCellList);
-                // get my range torpedo list
-                // keep only forFireList - myrangeTorpedo -> to verify
-                List<Cell> fireList = torpedo.mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySectorWithoutsafeList,mySubmarine);
-                // check
-//                System.err.println("potential fire following sonar: " + fireList.toString());
-                System.err.println("potential fire following sonar: " + fireList.stream().count());
-                // get random cell on fireList
-                Cell randomfireTorpedo = utils.randomCellOnList(fireList);
+            // add fire on move order following sonar or opponent presence on my sector
+            else if (fireFollowingSonarFeedback && !fireFollowingTorpedoFeedback && !moveNextOnSilence ||
+                    oppPresenceOnMySector && loadedTorpedo){
+                System.err.println("passage fire following opp on my sector (sonar or opp SURFACE)");
+                // get random cell on mySector
+                Cell randomfireTorpedo = torpedo.createPossibilitiCellOnSector(mySubmarine, board);
                 String addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
                 String nextMoveFire = addfireTorpedoString + "|" + nextMove;
 
                 // update lifeLoopBefore
                 mySubmarine.setLifeLoopBefore(mySubmarine.getLife());
                 // order of move and fire
-                System.out.println(nextMoveFire);
                 loadedTorpedo = false;
+                System.err.println("------- FIRE  -----------");
+                System.out.println(nextMoveFire);
 
             }
-            // no fire -> just move
+            // -----------JUST MOVE  ---------- JUST MOVE -------------- JUST MOVE -----------
             else {
                 // update lifeLoopBefore
                 mySubmarine.setLifeLoopBefore(mySubmarine.getLife());
                 // order for move
                 System.out.println(nextMove);
             }
-            
+
             // print submarines info
 //            System.err.println("My submarine: " + mySubmarine.toString());
 //            System.err.println("Opponent submarine: " + opponentSubmarine.toString());
@@ -285,12 +306,22 @@ class Deploy {
     /**
      * Deploy corner bottom left or bottom Middle
      */
-    public String deploy(HashMap<Integer, String> earthMap) {
+    public String deploy1(HashMap<Integer, String> earthMap) {
         // 1 deploy corner bottom left or middle bottom if there is earth
         String line14 = earthMap.get(14);
         char deployPoint = line14.charAt(0);
         if (deployPoint == '.') { return "0 14"; }
         else { return "7 14"; }
+    }
+
+    /**
+     * Deploy corner up left or Middle up
+     */
+    public String deploy2(HashMap<Integer, String> earthMap) {
+        String line0 = earthMap.get(0);
+        char deployPoint = line0.charAt(0);
+        if (deployPoint == '.') { return "0 0"; }
+        else { return "7 0"; }
     }
 
     public Cell recordDeploiementCell(String deploy) {
@@ -329,11 +360,13 @@ class Deploy {
  */
 class Move {
     Utils utils = new Utils();
+    private int destinationSector = 7; // 8 in fact
 
     /**
-     * First moving IA random move
+     * cell random move
      */
     public String moveIA1(Submarine mySubmarine, Board board) {
+        System.err.println("move IA1 in progress ");
         // list of future move (4 cell auround mySubmarine position)
         List<Cell> listAllPossibleMove = getListOfPossibleMove(mySubmarine);
 
@@ -370,6 +403,7 @@ class Move {
      * @return
      */
     public String moveIA2(Submarine mySubmarine, Board board) {
+        System.err.println("move IA2 in progress ");
         Cell myPositionCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
         Cell destinationCell = new Cell(0,14,null,null);
 
@@ -409,6 +443,61 @@ class Move {
 
     }
 
+    /**
+     * sector random move
+     * @param mySubmarine
+     * @param board
+     * @return
+     */
+    public String moveIA3(Submarine mySubmarine, Board board) {
+        Random rand = new Random();
+        // limit for random 9 -> all secteur
+        int max = 8;
+        int min = 1;
+        System.err.println("move IA3 in progress ");
+        mySubmarine.setDestinationSector(destinationSector);
+
+        // check
+        System.err.println("my submarine destination sector is: " + (mySubmarine.getDestinationSector()+1));
+        // check
+        System.err.println("my submarine is on sector: " + (mySubmarine.getMySector()));
+
+        // random sector if destination is ok
+        if ((mySubmarine.getDestinationSector()+1) == mySubmarine.getMySector()) {
+            destinationSector = rand.nextInt(max - min + 1) + min;
+        }
+
+        // get list of cell on this sector
+        List<Cell> listSectorDestination = board.getListSecteurs().get(destinationSector).getListCell();
+
+        // get a cell in destination sector
+        Cell destinationCell = utils.randomCellOnList(listSectorDestination);
+        String goToDestination = moveToOneCell(mySubmarine, board, destinationCell);
+        // check
+//            System.err.println("i move to " + destinationCell);
+        return goToDestination;
+    } 
+
+    public Cell getOneCellOnrandomSector(Submarine mySubmarine, Board board) {
+        List<Sector> listOfAllSector = board.getListSecteurs();
+        Random rand = new Random();
+
+        // get random sector
+        int max = listOfAllSector.size() - 1;
+        int min = 0;
+        int randomSector = rand.nextInt(max - min + 1) + min;
+
+        // get cell list of sector
+        Sector randomSecteur = board.getListSecteurs().get(randomSector);
+        // check
+        System.err.println("i move to sector " + randomSecteur.getId());
+        // record sector destination
+        mySubmarine.setDestinationSector(randomSecteur.getId());
+        // get random cell on it
+        Cell randomCellOnSector = utils.randomCellOnList(randomSecteur.getListCell());
+        return randomCellOnSector;
+    }
+
     public String moveToOneCell(Submarine mySubmarine, Board board, Cell destinationCell) {
         Cell myPositionCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
 
@@ -437,7 +526,7 @@ class Move {
             for (int i = 0; i < listWithoutMapLimitEarthAndAlreadyVisited.size(); i++) {
                 distance = utils.distanceFromCell(listWithoutMapLimitEarthAndAlreadyVisited.get(i), destinationCell);
                 listWithoutMapLimitEarthAndAlreadyVisited.get(i).setDistanceToDestinationCell(distance);
-                System.err.println("distance " + distance);
+//                System.err.println("distance " + distance);
             }
             // choice the min distance
             int min = 2000;
@@ -449,6 +538,8 @@ class Move {
             }
             // check
 //            System.err.println("min " + min);
+            // record my next move
+            mySubmarine.setMyNextMove(betterPathCell);
             return "MOVE " + betterPathCell.getCardinalPoint();
         } else {
             return "SURFACE";
@@ -575,31 +666,62 @@ class LocateOpponent {
         System.err.println("opponnent send torp ->: " + nbrCasePosible + " cell position possibility!!");
 
         // opponent Presence List After Torpedo Update With his next Movement
-        updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board);
+//        updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board);
     }
 
     public void updateOpponentPresenceListAfterTorpedoWithNewMovement(Submarine mySubmarine, Board board) {
 
         // read opponent next move
         String opponentNextMove = readOpponentMove(mySubmarine.getOpponentOrders());
+        // if opp order is not silence
+//        if (!opponentNextMove.contains("SILENCE")) {
+//
+//        }
         // read opponent torpedo explosion cell
-        Cell opponentTorpedocell = mySubmarine.getOpponentTorpedoExplosion();
+        if (mySubmarine.getOpponentTorpedoExplosion() != null) {
+            Cell opponentTorpedocell = mySubmarine.getOpponentTorpedoExplosion();
 
-        // find torpedo explosion Cell following his next move
-        Cell opponentTorpedoCellAfterMove = utils.findCellWithCardinalPoint(opponentNextMove,opponentTorpedocell.getX(), opponentTorpedocell.getY());
-        // check
-        System.err.println("new cell center range opp : " + opponentTorpedoCellAfterMove.toString());
+            // find torpedo explosion Cell following his next move
+            Cell opponentTorpedoCellAfterMove = utils.findCellWithCardinalPoint(opponentNextMove,opponentTorpedocell.getX(), opponentTorpedocell.getY());
+            // check
+            System.err.println("new cell center range opp : " + opponentTorpedoCellAfterMove.toString());
 
-        // re-center list of presence with opponent next move
-        List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRange(opponentTorpedoCellAfterMove.getX(), opponentTorpedoCellAfterMove.getY(),board);
+            // re-center list of presence with opponent next move
+            List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRange(opponentTorpedoCellAfterMove.getX(), opponentTorpedoCellAfterMove.getY(),board);
 
-        // re-record new range posibility of opponent presence
-        mySubmarine.setListOpponentPositionAfterTorpedo(listNewPresenceOpponentTorpedo);
-        // check
+            // re-record new range posibility of opponent presence
+            mySubmarine.setListOpponentPositionAfterTorpedo(listNewPresenceOpponentTorpedo);
+            // check
 //        System.err.println("update opp range list(torpedo): " + mySubmarine.getListOpponentPositionAfterTorpedo().toString());
 
-        // record new torpedo explosion cell
-        mySubmarine.setOpponentTorpedoExplosion(opponentTorpedoCellAfterMove);
+            // record new torpedo explosion cell
+            mySubmarine.setOpponentTorpedoExplosion(opponentTorpedoCellAfterMove);
+        }
+
+    }
+
+    public int checkIfOpponentMakeSurface(Submarine mySubmarine, Board board) {
+        int opponentSectorNbr = -1;
+        // read opponent next move
+        String opponentNextMove = mySubmarine.getOpponentOrders();
+        if (opponentNextMove.contains("SURFACE")) {
+            // check
+//            System.err.println("passage opp surface ");
+            // get number of opponent sector surface
+            String surfaceSector[] = opponentNextMove.split("SURFACE ");
+            opponentSectorNbr = Integer.valueOf(surfaceSector[1]);
+        }
+        // check
+//        System.err.println("opponent surface on sector: " + opponentSectorNbr);
+        return opponentSectorNbr;
+    }
+
+    public boolean checkIfOpponentMakeSilence(Submarine mySubmarine, Board board) {
+        String opponentOrder = mySubmarine.getOpponentOrders();
+        if (opponentOrder.contains("SILENCE")) {
+            return true;
+        }
+        else return false;
     }
 }
 
@@ -711,6 +833,29 @@ class Torpedo {
         } else {
             return false;
         }
+    }
+
+    public Cell createPossibilitiCellOnSector(Submarine mySubmarine, Board board) {
+        List<Cell> resultList = new ArrayList<>();
+
+        // get random cell on sector without safe list around me and only my torpedo range
+        List<Cell> mySectorCellList = utils.findSectorCellWithPosition(mySubmarine, board);
+        // list of safe cell (around me)
+        utils.createSafeCellListAroundMe(mySubmarine, board);
+        List<Cell> mySafeCellList = mySubmarine.getSafeListOfCellAroundMe();
+        // remove safe cell to mysecto cells
+        List<Cell> mySectorWithoutsafeList = utils.removeCellsOnList(mySectorCellList, mySafeCellList);
+        // get my range torpedo list
+        // keep only forFireList - myrangeTorpedo -> to verify
+        List<Cell> fireList = mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySectorWithoutsafeList,mySubmarine);
+        // check
+//                System.err.println("potential fire following sonar: " + fireList.toString());
+        System.err.println("potential fire on my sector: " + fireList.stream().count());
+        // get random cell on fireList
+        Cell randomfireTorpedo = utils.randomCellOnList(fireList);
+
+
+        return randomfireTorpedo;
     }
 }
 
@@ -920,7 +1065,7 @@ class Utils {
             }
         }
         // check
-        System.err.println("my secteur: " + mySector);
+//        System.err.println("my sector: " + mySector);
         return mySector;
     }
 
@@ -994,13 +1139,14 @@ class Submarine {
     private Cell opponentTorpedoExplosion;
     private List<Cell> torpedoFireList;
     private Cell myNextMove;
+    private int destinationSector;
 
 
     // constructor
     public Submarine() {
     }
 
-    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove) {
+    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove, int destinationSector) {
         this.id = id;
         this.positionX = positionX;
         this.positionY = positionY;
@@ -1019,6 +1165,7 @@ class Submarine {
         this.opponentTorpedoExplosion = opponentTorpedoExplosion;
         this.torpedoFireList = torpedoFireList;
         this.myNextMove = myNextMove;
+        this.destinationSector = destinationSector;
     }
 
     // getters setters
@@ -1130,6 +1277,12 @@ class Submarine {
     public void setMyNextMove(Cell myNextMove) {
         this.myNextMove = myNextMove;
     }
+    public int getDestinationSector() {
+        return destinationSector;
+    }
+    public void setDestinationSector(int destinationSector) {
+        this.destinationSector = destinationSector;
+    }
 
     // to string
     @Override
@@ -1153,6 +1306,7 @@ class Submarine {
                 ", opponentTorpedoExplosion=" + opponentTorpedoExplosion +
                 ", torpedoFireList=" + torpedoFireList +
                 ", myNextMove=" + myNextMove +
+                ", destinationSector=" + destinationSector +
                 '}';
     }
 }
