@@ -23,6 +23,7 @@ class Player {
         String chargeTorpedo = "TORPEDO";
         String chargeSilence = "SILENCE";
         String sentSonar = "SONAR ";
+        String silence = "SILENCE ";
         boolean isOpponentSentTorpedo = false;
         boolean loadedTorpedo = false;
         boolean loadedSonar = false;
@@ -71,6 +72,7 @@ class Player {
             boolean fireFollowingTorpedoFeedback = false;
             boolean lunchSonar = false;
             boolean fireFollowingSonarFeedback = false;
+            boolean moveNextOnSilence = false;
             int x = in.nextInt();
             mySubmarine.setPositionX(x);
             int y = in.nextInt();
@@ -156,6 +158,15 @@ class Player {
                 loadedTorpedo = false;
             }
 
+            // if mySubmarine life increase 2 point -> next move to silence if possible
+            int lifeDown = utils.compareLifeLoopBefore(mySubmarine);
+            // check
+//            System.err.println("life down: " + lifeDown);
+            if ((lifeDown == 2) && loadedSilence) {
+                // next move to silence
+                moveNextOnSilence = true;
+            }
+
 
             // ********** 5   **** Action ***********************************************************************************:
             // think for next move
@@ -174,31 +185,38 @@ class Player {
             if (nextMove == "SURFACE") {listCellAlreadyVisited = new ArrayList<>(); }
             listCellAlreadyVisited.add(myMoveCell);
             board.setListCellAlreadyVisited(listCellAlreadyVisited);
+
+            // if important damage try to move silence (for now only one move on silence)
+            if (nextMove != "SURFACE" && moveNextOnSilence) {
+                //check
+                System.err.println("next move on silence!");
+                nextMove = silence + mySubmarine.getMyNextMove().getCardinalPoint() + 1;
+            }
             // if my submarine move -> Charge torpedo first and sonar after and silence after
-            if (nextMove != "SURFACE" && !loadedTorpedo) {
+            if (nextMove != "SURFACE" && !loadedTorpedo && !moveNextOnSilence) {
                 nextMove = nextMove + chargeTorpedo;
             }
-            if (nextMove != "SURFACE" && loadedTorpedo && !loadedSonar) {
+            if (nextMove != "SURFACE" && loadedTorpedo && !loadedSonar && !moveNextOnSilence) {
                 nextMove = nextMove + chargeSonar;
             }
-            if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar && loadedSilence && lunchSonar) {
+            if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar && loadedSilence && lunchSonar && !moveNextOnSilence) {
                 //check
                 System.err.println("passage sonar order");
                 // lunch sonar
                 nextMove = sentSonar + String.valueOf(mySubmarine.getMySector()) + "|" + nextMove;
                 loadedSonar = false;
             }
-            if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar) {
+            if (nextMove != "SURFACE" && loadedTorpedo && loadedSonar && !moveNextOnSilence) {
                 nextMove = nextMove + chargeSilence;
             }
             // check
-                System.err.println("fireFollowingTorpedoFeedback: " + fireFollowingTorpedoFeedback);
-                System.err.println("fireFollowingSonarFeedback: " + fireFollowingSonarFeedback);
+//                System.err.println("fireFollowingTorpedoFeedback: " + fireFollowingTorpedoFeedback);
+//                System.err.println("fireFollowingSonarFeedback: " + fireFollowingSonarFeedback);
 
 
 
             // add fire on move order following opponent fire
-            if (fireFollowingTorpedoFeedback && !fireFollowingSonarFeedback) {
+            if (fireFollowingTorpedoFeedback && !fireFollowingSonarFeedback && !moveNextOnSilence) {
                 // get random cell on fireList
                 Cell randomfireTorpedo = utils.randomCellOnList(mySubmarine.getTorpedoFireList());
                 String addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
@@ -207,7 +225,7 @@ class Player {
                 System.out.println(nextMoveFire);
             }
             // add fire on move order following sonar
-            else if (fireFollowingSonarFeedback && !fireFollowingTorpedoFeedback){
+            else if (fireFollowingSonarFeedback && !fireFollowingTorpedoFeedback && !moveNextOnSilence){
                 // get random cell on sector without safe list around me and only my torpedo range
                 List<Cell> mySectorCellList = utils.findSectorCellWithPosition(mySubmarine, board);
                 // list of safe cell (around me)
@@ -225,6 +243,9 @@ class Player {
                 Cell randomfireTorpedo = utils.randomCellOnList(fireList);
                 String addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
                 String nextMoveFire = addfireTorpedoString + "|" + nextMove;
+
+                // update lifeLoopBefore
+                mySubmarine.setLifeLoopBefore(mySubmarine.getLife());
                 // order of move and fire
                 System.out.println(nextMoveFire);
                 loadedTorpedo = false;
@@ -232,6 +253,8 @@ class Player {
             }
             // no fire -> just move
             else {
+                // update lifeLoopBefore
+                mySubmarine.setLifeLoopBefore(mySubmarine.getLife());
                 // order for move
                 System.out.println(nextMove);
             }
@@ -326,6 +349,8 @@ class Move {
         // random on cell with last list
         if (!listWithoutMapLimitEarthAndAlreadyVisited.isEmpty()) {
             Cell cellToMoveRandom = utils.randomCellOnList(listWithoutMapLimitEarthAndAlreadyVisited);
+            // record my next move
+            mySubmarine.setMyNextMove(cellToMoveRandom);
 
             // move to random cell
             if (cellToMoveRandom.getX() != -10) {
@@ -339,7 +364,7 @@ class Move {
     }
 
     /**
-     * go t2 cell 2,2
+     * balayage
      * @param mySubmarine
      * @param board
      * @return
@@ -366,33 +391,68 @@ class Move {
             cell.setDistanceToDestinationCell(distance);
         }
         // calc better path
-        if (!listWithoutMapLimitEarthAndAlreadyVisited.isEmpty()) {
-//            Cell betterPathCell = new Cell();
-//            Integer min = 2000;
-//            for (int i = 0; i < listWithoutMapLimitEarthAndAlreadyVisited.size(); i++) {
-//                if (listWithoutMapLimitEarthAndAlreadyVisited.get(i).getDistanceToDestinationCell() < min) {
-//                    betterPathCell.setX(listWithoutMapLimitEarthAndAlreadyVisited.get(i).getX());
-//                    betterPathCell.setY(listWithoutMapLimitEarthAndAlreadyVisited.get(i).getY());
-//                    betterPathCell.setCardinalPoint(listWithoutMapLimitEarthAndAlreadyVisited.get(i).getCardinalPoint());
-//                    System.err.println("min: " + listWithoutMapLimitEarthAndAlreadyVisited.get(i).getDistanceToDestinationCell());
-//                }
-//            }
 
+        if (!listWithoutMapLimitEarthAndAlreadyVisited.isEmpty()) {
             Comparator<Cell> comparator = Comparator.comparing( Cell::getDistanceToDestinationCell);
             Cell betterPathCell = listWithoutMapLimitEarthAndAlreadyVisited.stream()
                     .min(comparator).get();
-            // if 3 choice
-//            if (listWithoutMapLimitEarthAndAlreadyVisited.size() > 2) {
-//                // get 2eme
-//                betterPathCell = listWithoutMapLimitEarthAndAlreadyVisited.get(1);
-//                //get random for fun
-////                betterPathCell = utils.randomCellOnList(listWithoutMapLimitEarthAndAlreadyVisited);
+            // check
+//            for (Cell cell:listWithoutMapLimitEarthAndAlreadyVisited ) {
+//                System.err.println("test: " + cell.toString());
 //            }
+            // record my next move
+            mySubmarine.setMyNextMove(betterPathCell);
             return "MOVE " + betterPathCell.getCardinalPoint();
         } else {
             return "SURFACE";
         }
 
+    }
+
+    public String moveToOneCell(Submarine mySubmarine, Board board, Cell destinationCell) {
+        Cell myPositionCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
+
+        // list of future move (4 cell auround mySubmarine position)
+        List<Cell> listAllPossibleMove = getListOfPossibleMove(mySubmarine);
+
+        // remove cells out of map
+        List<Cell> listWithoutMapLimit = utils.removeEndOfMap(listAllPossibleMove, board);
+
+        // remove earth on last list
+        List<Cell> listWithoutMapLimitAndEarth = utils.removeEarthCell(listWithoutMapLimit, board);
+
+        // remove alreadyVisit cell on last list
+        List<Cell> listWithoutMapLimitEarthAndAlreadyVisited = utils.removeAlreadyVisitedCell(listWithoutMapLimitAndEarth, board);
+
+        // to each cell add distance for destination
+        for (Cell cell: listWithoutMapLimitEarthAndAlreadyVisited) {
+            Integer distance = utils.distanceFromCell(myPositionCell, destinationCell);
+            cell.setDistanceToDestinationCell(distance);
+        }
+        // calc better path
+        if (!listWithoutMapLimitEarthAndAlreadyVisited.isEmpty()) {
+            // add distance with destination
+            Cell betterPathCell = new Cell();
+            int distance;
+            for (int i = 0; i < listWithoutMapLimitEarthAndAlreadyVisited.size(); i++) {
+                distance = utils.distanceFromCell(listWithoutMapLimitEarthAndAlreadyVisited.get(i), destinationCell);
+                listWithoutMapLimitEarthAndAlreadyVisited.get(i).setDistanceToDestinationCell(distance);
+                System.err.println("distance " + distance);
+            }
+            // choice the min distance
+            int min = 2000;
+            for (int i = 0; i < listWithoutMapLimitEarthAndAlreadyVisited.size(); i++) {
+                if (listWithoutMapLimitEarthAndAlreadyVisited.get(i).getDistanceToDestinationCell() < min) {
+                    min = listWithoutMapLimitEarthAndAlreadyVisited.get(i).getDistanceToDestinationCell();
+                    betterPathCell = listWithoutMapLimitEarthAndAlreadyVisited.get(i);
+                }
+            }
+            // check
+//            System.err.println("min " + min);
+            return "MOVE " + betterPathCell.getCardinalPoint();
+        } else {
+            return "SURFACE";
+        }
     }
 
     public List<Cell> getListOfPossibleMove(Submarine mySubmarine) {
@@ -427,7 +487,6 @@ class Move {
         return listAllPossibleMove;
     }
 }
-
 
 class LocateOpponent {
     Utils utils = new Utils();
@@ -865,6 +924,21 @@ class Utils {
         return mySector;
     }
 
+    public int compareLifeLoopBefore(Submarine mySubmarine) {
+        int life = mySubmarine.getLife();
+        int lifeloopBefore = mySubmarine.getLifeLoopBefore();
+
+        if ((lifeloopBefore - life) == 2) {
+            return 2;
+        }
+        else if ((lifeloopBefore - life) == 1) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
     /**
      * For remove cell if there is present on fullList
      * @param fullList
@@ -907,6 +981,7 @@ class Submarine {
     private int positionY;
     private int mySector;
     private int life;
+    private int lifeLoopBefore;
     private int torpedoCooldown;
     private int sonarCooldown;
     private int silenceCooldown;
@@ -918,18 +993,20 @@ class Submarine {
     private List<Cell> listOpponentPositionAfterTorpedo;
     private Cell opponentTorpedoExplosion;
     private List<Cell> torpedoFireList;
+    private Cell myNextMove;
 
 
     // constructor
     public Submarine() {
     }
 
-    public Submarine(int id, int positionX, int positionY, int mySector, int life, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList) {
+    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove) {
         this.id = id;
         this.positionX = positionX;
         this.positionY = positionY;
         this.mySector = mySector;
         this.life = life;
+        this.lifeLoopBefore = lifeLoopBefore;
         this.torpedoCooldown = torpedoCooldown;
         this.sonarCooldown = sonarCooldown;
         this.silenceCooldown = silenceCooldown;
@@ -941,6 +1018,7 @@ class Submarine {
         this.listOpponentPositionAfterTorpedo = listOpponentPositionAfterTorpedo;
         this.opponentTorpedoExplosion = opponentTorpedoExplosion;
         this.torpedoFireList = torpedoFireList;
+        this.myNextMove = myNextMove;
     }
 
     // getters setters
@@ -973,6 +1051,12 @@ class Submarine {
     }
     public void setLife(int life) {
         this.life = life;
+    }
+    public int getLifeLoopBefore() {
+        return lifeLoopBefore;
+    }
+    public void setLifeLoopBefore(int lifeLoopBefore) {
+        this.lifeLoopBefore = lifeLoopBefore;
     }
     public int getTorpedoCooldown() {
         return torpedoCooldown;
@@ -1040,6 +1124,12 @@ class Submarine {
     public void setTorpedoFireList(List<Cell> torpedoFireList) {
         this.torpedoFireList = torpedoFireList;
     }
+    public Cell getMyNextMove() {
+        return myNextMove;
+    }
+    public void setMyNextMove(Cell myNextMove) {
+        this.myNextMove = myNextMove;
+    }
 
     // to string
     @Override
@@ -1050,6 +1140,7 @@ class Submarine {
                 ", positionY=" + positionY +
                 ", mySector=" + mySector +
                 ", life=" + life +
+                ", lifeLoopBefore=" + lifeLoopBefore +
                 ", torpedoCooldown=" + torpedoCooldown +
                 ", sonarCooldown=" + sonarCooldown +
                 ", silenceCooldown=" + silenceCooldown +
@@ -1061,6 +1152,7 @@ class Submarine {
                 ", listOpponentPositionAfterTorpedo=" + listOpponentPositionAfterTorpedo +
                 ", opponentTorpedoExplosion=" + opponentTorpedoExplosion +
                 ", torpedoFireList=" + torpedoFireList +
+                ", myNextMove=" + myNextMove +
                 '}';
     }
 }
