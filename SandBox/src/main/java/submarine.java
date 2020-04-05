@@ -33,13 +33,20 @@ class Player {
         int width = in.nextInt();
         board.setNbrCellX(width);
         // check
-        System.err.println("limit board on X= " + board.getNbrCellX());
+//        System.err.println("limit board on X= " + board.getNbrCellX());
         int height = in.nextInt();
         board.setNbrCellY(height);
         // check
-        System.err.println("limit board on Y= " + board.getNbrCellY());
+//        System.err.println("limit board on Y= " + board.getNbrCellY());
         int myId = in.nextInt();
         mySubmarine.setId(myId);
+        // check
+        if (mySubmarine.getId() == 0) {
+            System.err.println("I begin");
+        } else {
+            System.err.println("Opponent begin");
+        }
+
         if (in.hasNextLine()) {
             in.nextLine();
         }
@@ -299,7 +306,8 @@ class Deploy {
     public void displayEarthAnalysis(HashMap<Integer, String> earthMap) {
         for (int i = 0; i < 15; i++) {
             String value = earthMap.get(i);
-            System.err.println(value);
+            // check
+//            System.err.println(value);
         }
     }
 
@@ -351,7 +359,7 @@ class Deploy {
             }
         }
          // check
-         System.err.println("list earth on board " + listCellContainsEarth.toString());
+//         System.err.println("list earth on board " + listCellContainsEarth.toString());
     }
 }
 
@@ -360,7 +368,7 @@ class Deploy {
  */
 class Move {
     Utils utils = new Utils();
-    private int destinationSector = 7; // 8 in fact
+    private int destinationSector = 4; // 5 in fact
 
     /**
      * cell random move
@@ -453,7 +461,7 @@ class Move {
         Random rand = new Random();
         // limit for random 9 -> all secteur
         int max = 8;
-        int min = 1;
+        int min = 0;
         System.err.println("move IA3 in progress ");
         mySubmarine.setDestinationSector(destinationSector);
 
@@ -476,7 +484,7 @@ class Move {
         // check
 //            System.err.println("i move to " + destinationCell);
         return goToDestination;
-    } 
+    }
 
     public Cell getOneCellOnrandomSector(Submarine mySubmarine, Board board) {
         List<Sector> listOfAllSector = board.getListSecteurs();
@@ -874,7 +882,7 @@ class Utils {
     public Cell randomCellOnList (List<Cell> inputList) {
         Random rand = new Random();
 
-        // limit for random 4 -> direction (North, South, West, Est)
+        // limit for random 4 -> direction (North, South, West, Est).
         int max = inputList.size() - 1;
         int min = 0;
         int randomCellInt = rand.nextInt(max - min + 1) + min;
