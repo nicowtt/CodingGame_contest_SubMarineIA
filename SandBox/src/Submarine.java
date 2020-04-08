@@ -1,3 +1,5 @@
+import sun.util.resources.ms.CalendarData_ms_MY;
+
 import java.util.List;
 
 class Submarine {
@@ -40,12 +42,15 @@ class Submarine {
 
     private String nextMoveString;
 
+    private Boolean iFireOnPrecedentLoop;
+    private Boolean listOppCellIncrease;
+
 
     // constructor
     public Submarine() {
     }
 
-    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, Cell opponentCell, int opponentSurfaceSector, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove, int destinationSector, Cell myFireTorpedoCell, Boolean loadedTorpedo, Boolean loadedSonar, Boolean loadedSilence, Boolean isOpponentSendTorpedo, Boolean canIfireTorpedoFollowingOppTorp, Boolean canIfireFollowingTorpedoFeedback, Boolean canIfireFollowingSonarFeedback, Boolean canISendSonar, Boolean moveNextOnSilence, Boolean oppPresenceOnMySector, String nextMoveString) {
+    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, Cell opponentCell, int opponentSurfaceSector, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove, int destinationSector, Cell myFireTorpedoCell, Boolean loadedTorpedo, Boolean loadedSonar, Boolean loadedSilence, Boolean isOpponentSendTorpedo, Boolean canIfireTorpedoFollowingOppTorp, Boolean canIfireFollowingTorpedoFeedback, Boolean canIfireFollowingSonarFeedback, Boolean canISendSonar, Boolean moveNextOnSilence, Boolean oppPresenceOnMySector, String nextMoveString, Boolean iFireOnPrecedentLoop, Boolean listOppCellIncrease) {
         this.id = id;
         this.positionX = positionX;
         this.positionY = positionY;
@@ -79,6 +84,8 @@ class Submarine {
         this.moveNextOnSilence = moveNextOnSilence;
         this.oppPresenceOnMySector = oppPresenceOnMySector;
         this.nextMoveString = nextMoveString;
+        this.iFireOnPrecedentLoop = iFireOnPrecedentLoop;
+        this.listOppCellIncrease = listOppCellIncrease;
     }
 
     // getters setters
@@ -280,6 +287,18 @@ class Submarine {
     public void setNextMoveString(String nextMoveString) {
         this.nextMoveString = nextMoveString;
     }
+    public Boolean getiFireOnPrecedentLoop() {
+        return iFireOnPrecedentLoop;
+    }
+    public void setiFireOnPrecedentLoop(Boolean iFireOnPrecedentLoop) {
+        this.iFireOnPrecedentLoop = iFireOnPrecedentLoop;
+    }
+    public Boolean getListOppCellIncrease() {
+        return listOppCellIncrease;
+    }
+    public void setListOppCellIncrease(Boolean listOppCellIncrease) {
+        this.listOppCellIncrease = listOppCellIncrease;
+    }
 
     // to string
     @Override
@@ -333,6 +352,8 @@ class Submarine {
         mySubmarine.setLoadedSonar(false);
         mySubmarine.setLoadedSilence(false);
         mySubmarine.setOpponentSendTorpedo(false);
+        mySubmarine.setiFireOnPrecedentLoop(false);
+        mySubmarine.setListOppCellIncrease(false);
     }
 
     public void startInitialStateGameLoop(Submarine mySubmarine) {

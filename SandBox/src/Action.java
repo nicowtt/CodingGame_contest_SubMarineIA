@@ -57,7 +57,10 @@ class Action {
             System.err.println("next move on silence!");
             mySubmarine.setMoveNextOnSilence(false);
             mySubmarine.setLoadedSilence(false);
-            mySubmarine.setNextMoveString(silence + mySubmarine.getMyNextMove().getCardinalPoint() + 1);
+            if (mySubmarine.getMyNextMove() != null) {
+                mySubmarine.setNextMoveString(silence + mySubmarine.getMyNextMove().getCardinalPoint() + 1);
+            }
+
         }
         // check
         System.err.println("Fire Following Torpedo Feedback: " + mySubmarine.getCanIfireFollowingTorpedoFeedback());
@@ -86,6 +89,8 @@ class Action {
             String nextMoveFire = addfireTorpedoString + "|" + mySubmarine.getNextMoveString();
             // order of move and fire
             mySubmarine.setLoadedTorpedo(false);
+            //fire
+            mySubmarine.setiFireOnPrecedentLoop(true);
             System.err.println("------- FIRE  -----------");
             System.out.println(nextMoveFire);
         }
@@ -115,6 +120,8 @@ class Action {
             opponentSubmarine.setLifeLoopBefore(opponentSubmarine.getLife());
             // order of move and fire
             mySubmarine.setLoadedTorpedo(false);
+            // fire
+            mySubmarine.setiFireOnPrecedentLoop(true);
             System.err.println("------- FIRE  -----------");
             System.out.println(nextMoveFire);
 
@@ -126,6 +133,8 @@ class Action {
             // update my lifeLoopBefore and opponent
             mySubmarine.setLifeLoopBefore(mySubmarine.getLife());
             opponentSubmarine.setLifeLoopBefore(opponentSubmarine.getLife());
+            // no fire
+            mySubmarine.setiFireOnPrecedentLoop(false);
             // order for move
             System.out.println(mySubmarine.getNextMoveString());
         }

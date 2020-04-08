@@ -1,3 +1,5 @@
+import java.rmi.ServerError;
+import java.util.ArrayList;
 import java.util.List;
 
 class LocateOpponent {
@@ -30,6 +32,7 @@ class LocateOpponent {
 
         // ----------------------------------- after goodluck fire ----------------------------------------------------
         locateOpponentAfter2pointOppIncreaseFire(opponentSubmarine, mySubmarine);
+        locateOpponentAfter1pointOppIncreaseFire(opponentSubmarine, mySubmarine, board);
         // --------------------------------------------------------------------------------------------------------
     }
 
@@ -117,31 +120,38 @@ class LocateOpponent {
 
         // read opponent next move
         String opponentNextMove = readOpponentMove(mySubmarine.getOpponentOrders());
-        if (opponentNextMove.contains("SILENCE")) {
+
+        if (mySubmarine.getOpponentOrders().contains("SILENCE")) {
             mySubmarine.setOpponentTorpedoExplosion(null);
+            mySubmarine.setTorpedoFireList(null);
             //check
-            System.err.println("reset opponentTorpedoExplosion list");
+            System.err.println("opp move in silent -> reset opponentTorpedoExplosion list");
         } else {
             // read opponent torpedo explosion cell
-            if (mySubmarine.getOpponentTorpedoExplosion() != null) {
-                Cell opponentTorpedocell = mySubmarine.getOpponentTorpedoExplosion();
+            // count torpedoFireList
+            if (mySubmarine.getTorpedoFireList() != null) {
+                Long torpedoFireList = mySubmarine.getTorpedoFireList().stream().count(); // >= 8 -> update is better with my new torpedo fire (-1 on opp)
+                if (mySubmarine.getOpponentTorpedoExplosion() != null && torpedoFireList >= 8) {
+                    Cell opponentTorpedocell = mySubmarine.getOpponentTorpedoExplosion();
 
-                // find torpedo explosion Cell following his next move
-                Cell opponentTorpedoCellAfterMove = utils.findCellWithCardinalPoint(opponentNextMove,opponentTorpedocell.getX(), opponentTorpedocell.getY());
-                // check
-                System.err.println("new cell center range opp : " + opponentTorpedoCellAfterMove.toString());
+                    // find torpedo explosion Cell following his next move
+                    Cell opponentTorpedoCellAfterMove = utils.findCellWithCardinalPoint(opponentNextMove,opponentTorpedocell.getX(), opponentTorpedocell.getY());
+                    // check
+                    System.err.println("new cell center range opp : " + opponentTorpedoCellAfterMove.toString());
 
-                // re-center list of presence with opponent next move
-                List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRange(opponentTorpedoCellAfterMove.getX(), opponentTorpedoCellAfterMove.getY(),board);
+                    // re-center list of presence with opponent next move
+                    List<Cell> listNewPresenceOpponentTorpedo = torpedo.createCellListTorpedoRange(opponentTorpedoCellAfterMove.getX(), opponentTorpedoCellAfterMove.getY(),board);
 
-                // re-record new range posibility of opponent presence
-                mySubmarine.setListOpponentPositionAfterTorpedo(listNewPresenceOpponentTorpedo);
-                // check
+                    // re-record new range posibility of opponent presence
+                    mySubmarine.setListOpponentPositionAfterTorpedo(listNewPresenceOpponentTorpedo);
+                    // check
 //        System.err.println("update opp range list(torpedo): " + mySubmarine.getListOpponentPositionAfterTorpedo().toString());
 
-                // record new torpedo explosion cell
-                mySubmarine.setOpponentTorpedoExplosion(opponentTorpedoCellAfterMove);
+                    // record new torpedo explosion cell
+                    mySubmarine.setOpponentTorpedoExplosion(opponentTorpedoCellAfterMove);
+                }
             }
+
         }
         // check
         System.err.println("passage update presence list after torpedo");
@@ -188,14 +198,22 @@ class LocateOpponent {
             mySubmarine.setTorpedoFireList(null);
            // reset oppPresenceCell
             mySubmarine.setOpponentCell(null);
+            // reset increase opp ( opp life -1)
+            mySubmarine.setListOppCellIncrease(false);
+
         }
     }
 
     public void locateOpponentAfterTorpedo(Submarine mySubmarine, Board board) {
-        if (mySubmarine.getListOpponentPositionAfterTorpedo() != null) { // update with his next move
+        if (mySubmarine.getListOpponentPositionAfterTorpedo() != null && !mySubmarine.getListOppCellIncrease()) { // no opp pos Cell increase
             updateOpponentPresenceListAfterTorpedoWithNewMovement(mySubmarine, board); // record result list on mySubmarine
         }
-        if (mySubmarine.getOpponentSendTorpedo()) {
+        if (mySubmarine.getListOpponentPositionAfterTorpedo() != null && mySubmarine.getListOppCellIncrease()) {// opp pos Cell increase (life opp -1)
+            // check
+            System.err.println("passage 2em opp move update fire list");
+            affineListAroundMyTorpedo(mySubmarine, board);
+        }
+        if (mySubmarine.getOpponentSendTorpedo() && !mySubmarine.getListOppCellIncrease()) { // no opp pos Cell increase
             createRangeCellOfOpponentPositionWhenSendTorpedo(mySubmarine, board);
         }
     }
@@ -210,23 +228,119 @@ class LocateOpponent {
             String oppMove = readOpponentMove(mySubmarine.getOpponentOrders());
             if (oppMove.equals("N") || oppMove.equals("S") || oppMove.equals("E") || oppMove.equals("W")) {
                 if (countOppPresence == 0) {
-                    if (mySubmarine.getMyFireTorpedoCell() != null ) {
+                    if (mySubmarine.getMyFireTorpedoCell() != null) {
                         mySubmarine.setOpponentCell(utils.findCellWithCardinalPoint(oppMove, mySubmarine.getMyFireTorpedoCell().getX(), mySubmarine.getMyFireTorpedoCell().getY()));
                         countOppPresence++;
-                    }
-                    else {
+                        // check
+                        System.err.println("opp life -2 !!!");
                         if (mySubmarine.getOpponentCell() != null) {
-                            mySubmarine.setOpponentCell(utils.findCellWithCardinalPoint(oppMove, mySubmarine.getOpponentCell().getX(), mySubmarine.getOpponentCell().getY()));
+                            System.err.println("new opp cell = " + mySubmarine.getOpponentCell().toString());
                         }
                     }
                 }
-                //check
-                if (mySubmarine.getOpponentCell() != null) {
-                    System.err.println("new opp cell = " + mySubmarine.getOpponentCell().toString());
+                else {
+                    if (mySubmarine.getOpponentCell() != null) {
+                        mySubmarine.setOpponentCell(utils.findCellWithCardinalPoint(oppMove, mySubmarine.getOpponentCell().getX(), mySubmarine.getOpponentCell().getY()));
+                        //check
+                        if (mySubmarine.getOpponentCell() != null) {
+                            System.err.println("new opp cell second pass = " + mySubmarine.getOpponentCell().toString());
+                        }
+                    }
                 }
             }
+        }
+    }
+
+
+    public void locateOpponentAfter1pointOppIncreaseFire(Submarine opponentSubmarine, Submarine mySubmarine, Board board) {
+        int compareOppLife = utils.compareLifeOfOpponent(opponentSubmarine);
+        String opponentMove = mySubmarine.getOpponentOrders();
+
+        if (compareOppLife == 1 && mySubmarine.getiFireOnPrecedentLoop() && !opponentMove.contains("SURFACE")) {
             // check
-            System.err.println("opp life -2 !!!");
+            System.err.println("----------->>> good fire opp loose 1 point !!");
+            // create cell around my torpedo cell
+            List<Cell> listAroundMyTorpedo = utils.cellsAroundOnecell(mySubmarine.getMyFireTorpedoCell(), board);
+            // update mySubmarine next fireList
+            mySubmarine.setTorpedoFireList(listAroundMyTorpedo);
+            //check
+            System.err.println("display new fire list: " + listAroundMyTorpedo);
+            // todo move this zone with opp movement -> ok for one move
+            affineListAroundMyTorpedo(mySubmarine, board);
+        }
+    }
+
+    public void affineListAroundMyTorpedo(Submarine mySubmarine, Board board) {
+        String oppOrders = mySubmarine.getOpponentOrders();
+        List<Cell> listAroundMyTorpedo;
+
+        if (oppOrders.contains("MOVE W")) {
+            Cell newCellWithOppMove = new Cell(mySubmarine.getMyFireTorpedoCell().getX() - 1,
+                    mySubmarine.getMyFireTorpedoCell().getY(), null, null);
+            //check
+            System.err.println("new center cell following opp move W = " + newCellWithOppMove);
+            // re-made list fire with opp move
+            listAroundMyTorpedo = utils.cellsAroundOnecell(newCellWithOppMove, board);
+            //check
+            Long countCell = listAroundMyTorpedo.stream().count();
+            System.err.println("new opp presence possibility = " + countCell);
+            mySubmarine.setListOpponentPositionAfterTorpedo(listAroundMyTorpedo);
+            mySubmarine.setListOppCellIncrease(true);
+            // set new cell torpedo with last information
+            mySubmarine.setMyFireTorpedoCell(newCellWithOppMove);
+
+        }
+        if (oppOrders.contains("MOVE N")) {
+            Cell newCellWithOppMove = new Cell(mySubmarine.getMyFireTorpedoCell().getX() ,
+                    mySubmarine.getMyFireTorpedoCell().getY() - 1, null, null);
+            //check
+            System.err.println("new center cell following opp move N = " + newCellWithOppMove);
+            // re-made list fire with opp move
+            listAroundMyTorpedo = utils.cellsAroundOnecell(newCellWithOppMove, board);
+            //check
+            Long countCell = listAroundMyTorpedo.stream().count();
+            System.err.println("new opp presence possibility = " + countCell);
+            mySubmarine.setListOpponentPositionAfterTorpedo(listAroundMyTorpedo);
+            mySubmarine.setListOppCellIncrease(true);
+            // set new cell torpedo with last information
+            mySubmarine.setMyFireTorpedoCell(newCellWithOppMove);
+
+        }
+        if (oppOrders.contains("MOVE E")) {
+            Cell newCellWithOppMove = new Cell(mySubmarine.getMyFireTorpedoCell().getX() + 1,
+                    mySubmarine.getMyFireTorpedoCell().getY(), null, null);
+            //check
+            System.err.println("new center cell following opp move E = " + newCellWithOppMove);
+            // re-made list fire with opp move
+            listAroundMyTorpedo = utils.cellsAroundOnecell(newCellWithOppMove, board);
+            //check
+            Long countCell = listAroundMyTorpedo.stream().count();
+            System.err.println("new opp presence possibility = " + countCell);
+            mySubmarine.setListOpponentPositionAfterTorpedo(listAroundMyTorpedo);
+            mySubmarine.setListOppCellIncrease(true);
+            // set new cell torpedo with last information
+            mySubmarine.setMyFireTorpedoCell(newCellWithOppMove);
+
+        }
+        if (oppOrders.contains("MOVE S")) {
+            Cell newCellWithOppMove = new Cell(mySubmarine.getMyFireTorpedoCell().getX(),
+                    mySubmarine.getMyFireTorpedoCell().getY() + 1, null, null);
+            //check
+            System.err.println("new center cell following opp move S = " + newCellWithOppMove);
+            // re-made list fire with opp move
+            listAroundMyTorpedo = utils.cellsAroundOnecell(newCellWithOppMove, board);
+            //check
+            Long countCell = listAroundMyTorpedo.stream().count();
+            System.err.println("new opp presence possibility = " + countCell);
+            mySubmarine.setListOpponentPositionAfterTorpedo(listAroundMyTorpedo);
+            mySubmarine.setListOppCellIncrease(true);
+            // set new cell torpedo with last information
+            mySubmarine.setMyFireTorpedoCell(newCellWithOppMove);
+
+        }
+        if (oppOrders.contains("SILENCE")) {
+            System.err.println("opp move silently..., reset fire list");
+            mySubmarine.setTorpedoFireList(null);
         }
     }
 

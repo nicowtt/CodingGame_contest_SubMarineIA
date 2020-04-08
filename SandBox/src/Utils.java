@@ -289,4 +289,54 @@ class Utils {
         int map[][] = board.getMap();
         return isOnTheMap(cell) && map[cell.getY()][cell.getX()] == EMPTY;
     }
+
+    public List<Cell> cellsAroundOnecell(Cell cellIn, Board board) {
+        int map[][] = board.getMap();
+        List<Cell> listCell = new ArrayList<>();
+
+        //get cell around cellIn
+        Cell northCell = new Cell(cellIn.getX(), cellIn.getY() - 1, null, null);
+        Cell northEstCell = new Cell(cellIn.getX() + 1, cellIn.getY() - 1, null, null);
+        Cell estCell = new Cell(cellIn.getX() + 1, cellIn.getY(), null, null);
+        Cell estSouthCell = new Cell(cellIn.getX() + 1, cellIn.getY() + 1, null, null);
+        Cell southCell = new Cell(cellIn.getX(), cellIn.getY() + 1, null, null);
+        Cell westSouthCell = new Cell(cellIn.getX() -1, cellIn.getY() + 1, null, null);
+        Cell WestCell = new Cell(cellIn.getX() -1, cellIn.getY(), null, null);
+        Cell northWestCell = new Cell(cellIn.getX() - 1, cellIn.getY() - 1, null, null);
+
+        // check if out of map  and earth and add on list
+        if (isOnTheMap(northCell)) {
+            if (map[northCell.getX()][northCell.getY()] == EMPTY) {listCell.add(northCell);}
+        }
+        if (isOnTheMap(northEstCell)) {
+            if (map[northEstCell.getX()][northEstCell.getY()] == EMPTY) {listCell.add(northEstCell);}
+        }
+        if (isOnTheMap(estCell)) {
+            if (map[estCell.getX()][estCell.getY()] == EMPTY) {listCell.add(estCell);}
+
+        }
+        if (isOnTheMap(estSouthCell)) {
+            if (map[estSouthCell.getX()][estSouthCell.getY()] == EMPTY) {listCell.add(estSouthCell);}
+
+        }
+        if (isOnTheMap(southCell)) {
+            if (map[southCell.getX()][southCell.getY()] == EMPTY) {listCell.add(southCell);}
+        }
+        if (isOnTheMap(westSouthCell)) {
+            if (map[westSouthCell.getX()][westSouthCell.getY()] == EMPTY) {listCell.add(westSouthCell);}
+        }
+        if (isOnTheMap(WestCell)) {
+            if (map[WestCell.getX()][WestCell.getY()] == EMPTY) {listCell.add(WestCell);}
+
+        }
+        if (isOnTheMap(northWestCell)) {
+            if (map[northWestCell.getX()][northWestCell.getY()] == EMPTY) {listCell.add(northWestCell);}
+        }
+        // + cellIn
+        listCell.add(cellIn);
+
+        //check
+//        System.err.println("list cell around this cell: " + listCell.toString());
+        return listCell;
+    }
 }
