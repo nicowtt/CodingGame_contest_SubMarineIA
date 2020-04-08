@@ -69,6 +69,12 @@ class Action {
         System.err.println("--Torpedo loaded: " + mySubmarine.getLoadedTorpedo() + " --");
     }
 
+    public void fireChoiceWhenTorpediFeedbackAndSonarFeedback(Submarine mySubmarine) {
+        if (mySubmarine.getCanIfireFollowingTorpedoFeedback() && mySubmarine.getCanIfireFollowingSonarFeedback()) {
+            mySubmarine.setCanIfireFollowingSonarFeedback(false);
+        }
+    }
+
     public void fireWhenOppSendTorpedo(Submarine mySubmarine) {
         String addfireTorpedoString;
 

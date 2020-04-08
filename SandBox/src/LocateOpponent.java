@@ -165,12 +165,21 @@ class LocateOpponent {
         int opponentSectorNbr = -1;
         // read opponent next move
         String opponentNextMove = mySubmarine.getOpponentOrders();
-        if (opponentNextMove.contains("SURFACE")) {
+        // check
+        System.err.println("opp orders:" + opponentNextMove);
+        if (opponentNextMove.matches("SURFACE.*")) {
             // check
-//            System.err.println("passage opp surface ");
+            System.err.println("passage opp orders surface ");
             // get number of opponent sector surface
             String surfaceSector[] = opponentNextMove.split("SURFACE ");
-            opponentSectorNbr = Integer.valueOf(surfaceSector[1]);
+            if (surfaceSector[1].contains("|")) {
+                //check
+                System.err.println("special passage bad writing opp orders surface");
+                String surfaceSectorAffined[] = surfaceSector[1].split("|");
+                opponentSectorNbr = Integer.valueOf(surfaceSectorAffined[0]);
+            } else {
+                opponentSectorNbr = Integer.valueOf(surfaceSector[1]);
+            }
         }
 
         if (opponentSectorNbr != -1) {

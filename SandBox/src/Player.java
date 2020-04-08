@@ -91,6 +91,7 @@ class Player {
             action.whenMySubmarineIs2PointsDamaged(mySubmarine);
 
             // ----------- FIRE IF YOU CAN  ---------- FIRE -------------- FIRE -----------
+            action.fireChoiceWhenTorpediFeedbackAndSonarFeedback(mySubmarine);
             action.fireWhenOppSendTorpedo(mySubmarine);
             action.fireWhenSonarFeedbackOnMySector(mySubmarine, opponentSubmarine, board);
 
