@@ -230,6 +230,6 @@ class LocateOpponent {
         }
     }
 
-    
+
 
 }
