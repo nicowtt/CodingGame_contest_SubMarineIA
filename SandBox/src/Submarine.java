@@ -14,6 +14,7 @@ class Submarine {
     private String sonarResult;
     private String opponentOrders;
     private Cell opponentCell;
+    private int opponentSurfaceSector;
 
     private List<Cell> safeListOfCellAroundMe;
     private List<Cell> listTorpedoRange;
@@ -24,12 +25,27 @@ class Submarine {
     private int destinationSector;
     private Cell myFireTorpedoCell;
 
+    private Boolean loadedTorpedo;
+    private Boolean loadedSonar;
+    private Boolean loadedSilence;
+    private Boolean isOpponentSendTorpedo;
+
+    private Boolean canIfireTorpedoFollowingOppTorp;
+    private Boolean canIfireFollowingTorpedoFeedback;
+    private Boolean canIfireFollowingSonarFeedback;
+    private Boolean canISendSonar;
+
+    private Boolean moveNextOnSilence;
+    private Boolean oppPresenceOnMySector;
+
+    private String nextMoveString;
+
 
     // constructor
     public Submarine() {
     }
 
-    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, Cell opponentCell, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove, int destinationSector, Cell myFireTorpedoCell) {
+    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, Cell opponentCell, int opponentSurfaceSector, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove, int destinationSector, Cell myFireTorpedoCell, Boolean loadedTorpedo, Boolean loadedSonar, Boolean loadedSilence, Boolean isOpponentSendTorpedo, Boolean canIfireTorpedoFollowingOppTorp, Boolean canIfireFollowingTorpedoFeedback, Boolean canIfireFollowingSonarFeedback, Boolean canISendSonar, Boolean moveNextOnSilence, Boolean oppPresenceOnMySector, String nextMoveString) {
         this.id = id;
         this.positionX = positionX;
         this.positionY = positionY;
@@ -43,6 +59,7 @@ class Submarine {
         this.sonarResult = sonarResult;
         this.opponentOrders = opponentOrders;
         this.opponentCell = opponentCell;
+        this.opponentSurfaceSector = opponentSurfaceSector;
         this.safeListOfCellAroundMe = safeListOfCellAroundMe;
         this.listTorpedoRange = listTorpedoRange;
         this.listOpponentPositionAfterTorpedo = listOpponentPositionAfterTorpedo;
@@ -51,6 +68,17 @@ class Submarine {
         this.myNextMove = myNextMove;
         this.destinationSector = destinationSector;
         this.myFireTorpedoCell = myFireTorpedoCell;
+        this.loadedTorpedo = loadedTorpedo;
+        this.loadedSonar = loadedSonar;
+        this.loadedSilence = loadedSilence;
+        this.isOpponentSendTorpedo = isOpponentSendTorpedo;
+        this.canIfireTorpedoFollowingOppTorp = canIfireTorpedoFollowingOppTorp;
+        this.canIfireFollowingTorpedoFeedback = canIfireFollowingTorpedoFeedback;
+        this.canIfireFollowingSonarFeedback = canIfireFollowingSonarFeedback;
+        this.canISendSonar = canISendSonar;
+        this.moveNextOnSilence = moveNextOnSilence;
+        this.oppPresenceOnMySector = oppPresenceOnMySector;
+        this.nextMoveString = nextMoveString;
     }
 
     // getters setters
@@ -180,6 +208,78 @@ class Submarine {
     public void setOpponentCell(Cell opponentCell) {
         this.opponentCell = opponentCell;
     }
+    public Boolean getLoadedTorpedo() {
+        return loadedTorpedo;
+    }
+    public void setLoadedTorpedo(Boolean loadedTorpedo) {
+        this.loadedTorpedo = loadedTorpedo;
+    }
+    public Boolean getLoadedSonar() {
+        return loadedSonar;
+    }
+    public void setLoadedSonar(Boolean loadedSonar) {
+        this.loadedSonar = loadedSonar;
+    }
+    public Boolean getLoadedSilence() {
+        return loadedSilence;
+    }
+    public void setLoadedSilence(Boolean loadedSilence) {
+        this.loadedSilence = loadedSilence;
+    }
+    public Boolean getOpponentSendTorpedo() {
+        return isOpponentSendTorpedo;
+    }
+    public void setOpponentSendTorpedo(Boolean opponentSendTorpedo) {
+        isOpponentSendTorpedo = opponentSendTorpedo;
+    }
+    public Boolean getCanIfireTorpedoFollowingOppTorp() {
+        return canIfireTorpedoFollowingOppTorp;
+    }
+    public void setCanIfireTorpedoFollowingOppTorp(Boolean canIfireTorpedoFollowingOppTorp) {
+        this.canIfireTorpedoFollowingOppTorp = canIfireTorpedoFollowingOppTorp;
+    }
+    public Boolean getCanIfireFollowingTorpedoFeedback() {
+        return canIfireFollowingTorpedoFeedback;
+    }
+    public void setCanIfireFollowingTorpedoFeedback(Boolean canIfireFollowingTorpedoFeedback) {
+        this.canIfireFollowingTorpedoFeedback = canIfireFollowingTorpedoFeedback;
+    }
+    public Boolean getCanISendSonar() {
+        return canISendSonar;
+    }
+    public void setCanISendSonar(Boolean canISendSonar) {
+        this.canISendSonar = canISendSonar;
+    }
+    public Boolean getCanIfireFollowingSonarFeedback() {
+        return canIfireFollowingSonarFeedback;
+    }
+    public void setCanIfireFollowingSonarFeedback(Boolean canIfireFollowingSonarFeedback) {
+        this.canIfireFollowingSonarFeedback = canIfireFollowingSonarFeedback;
+    }
+    public Boolean getMoveNextOnSilence() {
+        return moveNextOnSilence;
+    }
+    public void setMoveNextOnSilence(Boolean moveNextOnSilence) {
+        this.moveNextOnSilence = moveNextOnSilence;
+    }
+    public Boolean getOppPresenceOnMySector() {
+        return oppPresenceOnMySector;
+    }
+    public void setOppPresenceOnMySector(Boolean oppPresenceOnMySector) {
+        this.oppPresenceOnMySector = oppPresenceOnMySector;
+    }
+    public int getOpponentSurfaceSector() {
+        return opponentSurfaceSector;
+    }
+    public void setOpponentSurfaceSector(int opponentSurfaceSector) {
+        this.opponentSurfaceSector = opponentSurfaceSector;
+    }
+    public String getNextMoveString() {
+        return nextMoveString;
+    }
+    public void setNextMoveString(String nextMoveString) {
+        this.nextMoveString = nextMoveString;
+    }
 
     // to string
     @Override
@@ -206,6 +306,10 @@ class Submarine {
                 ", myNextMove=" + myNextMove +
                 ", destinationSector=" + destinationSector +
                 ", myFireTorpedoCell=" + myFireTorpedoCell +
+                ", loadedTorpedo=" + loadedTorpedo +
+                ", loadedSonar=" + loadedSonar +
+                ", loadedSilence=" + loadedSilence +
+                ", isOpponentSendTorpedo=" + isOpponentSendTorpedo +
                 '}';
     }
 
@@ -222,5 +326,83 @@ class Submarine {
         this.setMineCooldown(mineCooldown);
         this.setSonarResult(sonarResult);
         this.setOpponentOrders(opponentOrders);
+    }
+
+    public void startInitialState(Submarine mySubmarine) {
+        mySubmarine.setLoadedTorpedo(false);
+        mySubmarine.setLoadedSonar(false);
+        mySubmarine.setLoadedSilence(false);
+        mySubmarine.setOpponentSendTorpedo(false);
+    }
+
+    public void startInitialStateGameLoop(Submarine mySubmarine) {
+        mySubmarine.canIfireTorpedoFollowingOppTorp = false;
+        mySubmarine.canIfireFollowingTorpedoFeedback = false;
+        mySubmarine.canISendSonar = false;
+        mySubmarine.canIfireFollowingSonarFeedback = false;
+        mySubmarine.moveNextOnSilence = false;
+        mySubmarine.oppPresenceOnMySector = false;
+    }
+
+    public void check(Submarine mySubmarine, Submarine opponentSubmarine, Board board) {
+        Utils utils = new Utils();
+        Torpedo torpedo = new Torpedo();
+
+        // sonar feedback
+        System.err.println("retour sonar: " + mySubmarine.getSonarResult());
+
+        // mySector position
+        mySubmarine.setMySector(utils.findMyPositionSector(mySubmarine, board));
+
+        // check if i can fire torpedo following my position (my torpedo loaded and opponent locate list)
+        if (mySubmarine.getTorpedoCooldown() == 0 && mySubmarine.getListOpponentPositionAfterTorpedo() != null) {
+            torpedo.canIFireTorpedo(mySubmarine, board);
+        }
+        // check if my torpedo is loaded
+        if (mySubmarine.getTorpedoCooldown() == 0) {
+            mySubmarine.setLoadedTorpedo(true);
+            // check
+            System.err.println("Torpedo loaded and list range ok");
+        }
+        // check if my sonar is loaded
+        if (mySubmarine.getSonarCooldown() == 0) {
+            mySubmarine.setLoadedSonar(true);
+            //check
+            System.err.println("Sonar loaded");
+        }
+        // check if silence is loaded
+        if (mySubmarine.getSilenceCooldown() == 0) {
+            mySubmarine.setLoadedSilence(true);
+            //check
+            System.err.println("Silence loaded");
+            // lunch sonar in my sector
+            if (mySubmarine.getSonarCooldown() == 0) {
+                mySubmarine.setCanISendSonar(true);
+                //check
+                System.err.println("sonar can sent!");
+            }
+        }
+        // add torpedo order if possible
+        if (mySubmarine.getCanIfireTorpedoFollowingOppTorp() && mySubmarine.getLoadedTorpedo()) {
+            mySubmarine.setCanIfireFollowingTorpedoFeedback(true);
+            mySubmarine.setLoadedTorpedo(false);
+        }
+
+        // if mySubmarine life increase 2 point -> next move to silence if possible
+        int lifeDown = utils.compareLifeLoopBefore(mySubmarine);
+        // check
+            System.err.println("my life down : " + lifeDown);
+        if ((lifeDown == 2) && mySubmarine.getLoadedSilence()) {
+            // next move to silence
+            mySubmarine.setMoveNextOnSilence(true);
+        }
+
+        // if opponent life increase 2 point -> lock his position
+        int oppLifeDown = utils.compareLifeOfOpponent(opponentSubmarine);
+
+        // check if opponent is in my  sector with sonar feedback
+        if (mySubmarine.getSonarResult().equals("Y")) {
+            mySubmarine.setCanIfireFollowingSonarFeedback(true);
+        }
     }
 }

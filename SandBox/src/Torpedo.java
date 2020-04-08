@@ -93,7 +93,7 @@ class Torpedo {
         return possibilityOfTorpedoFire;
     }
 
-    public boolean canIFireTorpedo(Submarine mySubmarine, Board board) {
+    public void canIFireTorpedo(Submarine mySubmarine, Board board) {
         List<Cell> potentialfireList = mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySubmarine.getListOpponentPositionAfterTorpedo(), mySubmarine);
         // remove cell around me
         utils.createSafeCellListAroundMe(mySubmarine, board);
@@ -105,9 +105,9 @@ class Torpedo {
         System.err.println("Possibility of fire on: " + countFirecell);
                 System.err.println("Possibility of fire on: " + fireList.toString());
         if (!fireList.isEmpty()) {
-            return true;
+            mySubmarine.setCanIfireTorpedoFollowingOppTorp(true);
         } else {
-            return false;
+            mySubmarine.setCanIfireTorpedoFollowingOppTorp(false);
         }
     }
 
