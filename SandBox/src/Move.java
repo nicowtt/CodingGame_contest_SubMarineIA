@@ -138,8 +138,7 @@ class Move {
         map = board.getMap();
         Cell myCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
 
-        String direction = getBestDirection(myCell,board);
-
+        String direction = getBestDirection(myCell,board, mySubmarine);
         if (direction != "-") {
             return direction;
         } else {
@@ -149,13 +148,13 @@ class Move {
     }
 
 
-    public String getBestDirection(Cell myPosCell, Board board) {
+    public String getBestDirection(Cell myPosCell, Board board, Submarine mySubmarine) {
         board.setVisitedCell(myPosCell);
 
-        Cell northCell = new Cell(myPosCell.getX(), myPosCell.getY() - 1, null, null);
-        Cell southCell = new Cell(myPosCell.getX(), myPosCell.getY() + 1, null, null);
-        Cell eastCell = new Cell(myPosCell.getX() + 1 , myPosCell.getY(), null, null);
-        Cell westCell = new Cell(myPosCell.getX() - 1, myPosCell.getY(), null, null);
+        Cell northCell = new Cell(myPosCell.getX(), myPosCell.getY() - 1, "N ", null);
+        Cell southCell = new Cell(myPosCell.getX(), myPosCell.getY() + 1, "S ", null);
+        Cell eastCell = new Cell(myPosCell.getX() + 1 , myPosCell.getY(), "E ", null);
+        Cell westCell = new Cell(myPosCell.getX() - 1, myPosCell.getY(), "W ", null);
 
         int northCells = backtrack(map, northCell, board, new ArrayList<>());
         int southCells = backtrack(map, southCell, board, new ArrayList<>());
@@ -171,14 +170,18 @@ class Move {
         }
 
         if (northCells == maxCells) {
+            mySubmarine.setMyNextMove(northCell);
             return "MOVE N ";
         }
         if (southCells == maxCells) {
+            mySubmarine.setMyNextMove(southCell);
             return "MOVE S ";
         }
         if (eastCells == maxCells) {
+            mySubmarine.setMyNextMove(eastCell);
             return "MOVE E ";
         }
+        mySubmarine.setMyNextMove(westCell);
         return "MOVE W ";
     }
 

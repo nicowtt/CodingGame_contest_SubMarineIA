@@ -73,7 +73,7 @@ class Board {
             for (int j = 0; j < stringMap.get(i).length(); j++) {
                 map[i][j] = stringMap.get(j).charAt(i) == 'x' ? ISLAND : EMPTY;
                 if (map[i][j] == ISLAND) {
-                    System.err.println("ISLAND = " + i + j);
+//                    System.err.println("ISLAND = " + i + j);
                 }
             }
         }

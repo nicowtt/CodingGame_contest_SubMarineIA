@@ -113,6 +113,7 @@ class Torpedo {
 
     public Cell createPossibilitiCellOnSector(Submarine mySubmarine, Board board) {
         List<Cell> resultList = new ArrayList<>();
+        int countFireList = 0;
 
         // get random cell on sector without safe list around me and only my torpedo range
         List<Cell> mySectorCellList = utils.findSectorCellWithPosition(mySubmarine, board);
@@ -121,14 +122,21 @@ class Torpedo {
         List<Cell> mySafeCellList = mySubmarine.getSafeListOfCellAroundMe();
         // remove safe cell to mysecto cells
         List<Cell> mySectorWithoutsafeList = utils.removeCellsOnList(mySectorCellList, mySafeCellList);
+        // check
+        System.err.println("3 Create possibility Fire cell on sector " + mySectorWithoutsafeList.stream().count()); //21
         // get my range torpedo list
         // keep only forFireList - myrangeTorpedo -> to verify
-        List<Cell> fireList = mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySectorWithoutsafeList,mySubmarine);
+        List<Cell> fireList = mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySectorWithoutsafeList,mySubmarine); // 0!! bug
+        // check
+        System.err.println("4 Create possibility Fire cell on sector " + fireList.stream().count());
         // check
 //                System.err.println("potential fire following sonar: " + fireList.toString());
         System.err.println("potential fire on my sector: " + fireList.stream().count());
-        // get random cell on fireList
-        if (!fireList.equals(0)) {
+        for (int i = 0; i < fireList.size(); i++) {
+            countFireList++;
+        }
+        // get random cell on fireList.
+        if (countFireList > 0) {
             Cell randomfireTorpedo = utils.randomCellOnList(fireList);
             return randomfireTorpedo;
         } else {

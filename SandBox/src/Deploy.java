@@ -14,8 +14,15 @@ class Deploy {
 
         if (map[14][14] == EMPTY) {
             return "14 14";
-        } else {
+        }
+        if (map[14][0] == EMPTY) {
+            return "14 0";
+        }
+        if (map[0][0] == EMPTY) {
             return "7 14";
+        }
+        else {
+            return "0 0";
         }
     }
 }

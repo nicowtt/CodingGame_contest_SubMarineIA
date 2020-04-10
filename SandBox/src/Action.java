@@ -51,15 +51,13 @@ class Action {
 
     public void whenMySubmarineIs2PointsDamaged(Submarine mySubmarine) {
         String silence = "SILENCE ";
-        // if important damage try to move silence (for now only one move on silence)
+        // if important damage try to move silence (for now only one move on silence).
         if (mySubmarine.getNextMoveString() != "SURFACE" && mySubmarine.getMoveNextOnSilence() && mySubmarine.getLoadedSilence()) {
             //check
             System.err.println("next move on silence!");
             mySubmarine.setMoveNextOnSilence(false);
             mySubmarine.setLoadedSilence(false);
-            if (mySubmarine.getMyNextMove() != null) {
-                mySubmarine.setNextMoveString(silence + mySubmarine.getMyNextMove().getCardinalPoint() + 1);
-            }
+            mySubmarine.setNextMoveString(silence + mySubmarine.getMyNextMove().getCardinalPoint() + 1);
 
         }
         // check
