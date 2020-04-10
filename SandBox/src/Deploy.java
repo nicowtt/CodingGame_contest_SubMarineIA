@@ -12,8 +12,8 @@ class Deploy {
     public String deploy0(Board board) {
         int map[][] = board.getMap();
 
-        if (map[0][14] == EMPTY) {
-            return "0 14";
+        if (map[14][14] == EMPTY) {
+            return "14 14";
         } else {
             return "7 14";
         }

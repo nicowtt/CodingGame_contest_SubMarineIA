@@ -128,9 +128,12 @@ class Torpedo {
 //                System.err.println("potential fire following sonar: " + fireList.toString());
         System.err.println("potential fire on my sector: " + fireList.stream().count());
         // get random cell on fireList
-        Cell randomfireTorpedo = utils.randomCellOnList(fireList);
+        if (!fireList.equals(0)) {
+            Cell randomfireTorpedo = utils.randomCellOnList(fireList);
+            return randomfireTorpedo;
+        } else {
+            return new Cell(-1,-1,null,null);
+        }
 
-
-        return randomfireTorpedo;
     }
 }

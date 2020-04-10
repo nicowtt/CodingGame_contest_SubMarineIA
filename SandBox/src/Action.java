@@ -112,25 +112,28 @@ class Action {
             System.err.println("passage fire following opp on my sector (sonar or opp SURFACE)");
             // get random cell on mySector
             Cell randomfireTorpedo = torpedo.createPossibilitiCellOnSector(mySubmarine, board);
-            mySubmarine.setMyFireTorpedoCell(randomfireTorpedo);
-            // if opp is lock
-            if (mySubmarine.getOpponentCell() != null) {
-                addfireTorpedoString = "TORPEDO " + mySubmarine.getOpponentCell().getX() + " " + mySubmarine.getOpponentCell().getY();
-            } else {
-                addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
+            if (randomfireTorpedo.getX() != -1) {
+                mySubmarine.setMyFireTorpedoCell(randomfireTorpedo);
+                // if opp is lock
+                if (mySubmarine.getOpponentCell() != null) {
+                    addfireTorpedoString = "TORPEDO " + mySubmarine.getOpponentCell().getX() + " " + mySubmarine.getOpponentCell().getY();
+                } else {
+                    addfireTorpedoString = "TORPEDO " + randomfireTorpedo.getX() + " " + randomfireTorpedo.getY();
+                }
+                //check
+                System.err.println("addFireTorpedoString after sonar: " + addfireTorpedoString);
+                String nextMoveFire = addfireTorpedoString + "|" + mySubmarine.getNextMoveString();
+
+                // update my lifeLoopBefore and opponent
+                mySubmarine.setLifeLoopBefore(mySubmarine.getLife());
+                opponentSubmarine.setLifeLoopBefore(opponentSubmarine.getLife());
+                // order of move and fire
+                mySubmarine.setLoadedTorpedo(false);
+                // fire
+                mySubmarine.setiFireOnPrecedentLoop(true);
+                System.err.println("------- FIRE  -----------");
+                System.out.println(nextMoveFire);
             }
-            String nextMoveFire = addfireTorpedoString + "|" + mySubmarine.getNextMoveString();
-
-            // update my lifeLoopBefore and opponent
-            mySubmarine.setLifeLoopBefore(mySubmarine.getLife());
-            opponentSubmarine.setLifeLoopBefore(opponentSubmarine.getLife());
-            // order of move and fire
-            mySubmarine.setLoadedTorpedo(false);
-            // fire
-            mySubmarine.setiFireOnPrecedentLoop(true);
-            System.err.println("------- FIRE  -----------");
-            System.out.println(nextMoveFire);
-
         }
     }
 
