@@ -78,8 +78,10 @@ class Torpedo {
     public List<Cell> mixRangePossibilityAfterTorpedoWithMyRangeTorpedo (List<Cell> inputRangeListAfterTorpedo, Submarine mySubmarine) {
         List<Cell> possibilityOfTorpedoFire = new ArrayList<>();
         List<Cell> myRangeTorpedoList = mySubmarine.getListTorpedoRange();
+        //check.
+        System.err.println("5 myRangeTorpedoList= " + myRangeTorpedoList.stream().count());
 
-        for (int i = 0; i < inputRangeListAfterTorpedo.size() ; i++) {
+        for (int i = 0; i < inputRangeListAfterTorpedo.size() ; i++) { // ok this list contains cells!
             for (int j = 0; j < myRangeTorpedoList.size(); j++) {
                 if (inputRangeListAfterTorpedo.get(i).getX() == myRangeTorpedoList.get(j).getX()) {
                     if (inputRangeListAfterTorpedo.get(i).getY() == myRangeTorpedoList.get(j).getY()) {
