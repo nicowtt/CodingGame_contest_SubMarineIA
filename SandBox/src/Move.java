@@ -7,11 +7,9 @@ class Move {
     Utils utils = new Utils();
     private int destinationSector = 4; // 5 in fact
     private static int EMPTY = 0;
+    private static int ISLAND = 1;
+    private static int ALREADY_VISITED = 2;
 
-    int northCells;
-    int southCells;
-    int eastCells;
-    int westCells;
     int map[][];
 
     /**
@@ -130,40 +128,39 @@ class Move {
         return goToDestination;
     }
 
+    /**
+     * Avoid dead end with full fill algorithm
+     * @param mySubmarine
+     * @param board
+     * @return
+     */
     public String moveIA4(Submarine mySubmarine, Board board) {
         map = board.getMap();
-        System.err.println("check 0 13 case:" + map[0][13]);
-        System.err.println("check 1 14 case:" + map[1][14]);
         Cell myCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
 
         String direction = getBestDirection(myCell,board);
 
-        // reset
-        northCells = 0;
-        southCells = 0;
-        eastCells = 0;
-        westCells = 0;
-
-
         if (direction != "-") {
             return direction;
         } else {
+            board.resetVisitedCell();
             return "SURFACE";
         }
     }
 
 
     public String getBestDirection(Cell myPosCell, Board board) {
+        board.setVisitedCell(myPosCell);
 
         Cell northCell = new Cell(myPosCell.getX(), myPosCell.getY() - 1, null, null);
-//        Cell southCell = new Cell(myPosCell.getX(), myPosCell.getY() + 1, null, null);
+        Cell southCell = new Cell(myPosCell.getX(), myPosCell.getY() + 1, null, null);
         Cell eastCell = new Cell(myPosCell.getX() + 1 , myPosCell.getY(), null, null);
-//        Cell westCell = new Cell(myPosCell.getX() - 1, myPosCell.getY(), null, null);
+        Cell westCell = new Cell(myPosCell.getX() - 1, myPosCell.getY(), null, null);
 
         int northCells = backtrack(map, northCell, board, new ArrayList<>());
-//        int southCells = backtrack(map, southCell, board, new ArrayList<>());
+        int southCells = backtrack(map, southCell, board, new ArrayList<>());
         int eastCells = backtrack(map, eastCell, board, new ArrayList<>());
-//        int westCells = backtrack(board.getMap(), westCell, board, new ArrayList<>());
+        int westCells = backtrack(map, westCell, board, new ArrayList<>());
 
         System.err.println("N= " + northCells + " S= " + southCells + " E= " + eastCells + " W= " + westCells);
 
@@ -193,35 +190,23 @@ class Move {
             return 0;
         }
 
-
         board.setVisitedCell(cell);
         visited.add(cell);
 
         Cell northCell = new Cell(cell.getX(), cell.getY() - 1, null, null);
-//        Cell southCell = new Cell(cell.getX(), cell.getY() + 1, null, null);
+        Cell southCell = new Cell(cell.getX(), cell.getY() + 1, null, null);
         Cell eastCell = new Cell(cell.getX() + 1 , cell.getY(), null, null);
-//        Cell westCell = new Cell(cell.getX() - 1, cell.getY(), null, null);
-
-        if (cell.getX() == northCell.getX() && cell.getY() == northCell.getY() + 1) {
-            northCells++;
-        }
-//        if (cell.getX() == southCell.getX() && cell.getY() == southCell.getY() - 1) {
-//            southCells++;
-//        }
-        if (cell.getX() == eastCell.getX() - 1 && cell.getY() == eastCell.getY()) {
-            eastCells++;
-        }
+        Cell westCell = new Cell(cell.getX() - 1, cell.getY(), null, null);
 
         int northCellsBackTrack = backtrack(map, northCell, board, visited);
-//        int southCellsBackTrack = backtrack(board.getMap(), southCell, board, visited);
-        int eastCellsBackTrack = backtrack(board.getMap(), eastCell, board, visited);
-//        int westCells = backtrack(board.getMap(), westCell, board, visited);
+        int southCellsBackTrack = backtrack(map, southCell, board, visited);
+        int eastCellsBackTrack = backtrack(map, eastCell, board, visited);
+        int westCellsBackTrack = backtrack(map, westCell, board, visited);
 
-        board.setEmptyCell(cell); // for have cell same as before
 
-        int result = Math.max(northCells, Math.max(southCells, Math.max(eastCells, westCells)));
+        map[cell.getX()][cell.getY()] = EMPTY; // for have cell same as before
 
-        return result;
+        return Math.max(northCellsBackTrack, Math.max(southCellsBackTrack, Math.max(eastCellsBackTrack, westCellsBackTrack)) + 1);
     }
 
     private boolean arrayContainsPos(ArrayList<Cell> arr, Cell cell ) {
