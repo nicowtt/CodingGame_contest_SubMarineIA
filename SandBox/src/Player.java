@@ -51,7 +51,7 @@ class Player {
         System.out.println(deploy.deploy0(board));
 
         // initial state of mySubmarine
-        mySubmarine.startInitialState(mySubmarine);
+        mySubmarine.startInitialState(mySubmarine, board);
 
         // ***************************************** 2 **** Game loop**************************************************
         while (true) {
@@ -84,7 +84,9 @@ class Player {
 
             // ******************************* 5 ****** MOVE AND ACTION ***********************************************
             // IA1 -> random cell ; IA2 -> scanning ; IA3 -> random cell(each move) on random sector
-            mySubmarine.setNextMoveString(move.moveIA3(mySubmarine, board));
+//            mySubmarine.setNextMoveString(move.moveIA3(mySubmarine, board));
+            mySubmarine.setNextMoveString(move.moveIA4(mySubmarine, board));
+
             // ----------------------------------------------------------------
             action.whenMySubmarineToSurface(mySubmarine, board);
             action.forChargingSubmarineTools(mySubmarine);

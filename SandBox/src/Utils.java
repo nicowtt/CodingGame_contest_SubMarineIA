@@ -282,12 +282,18 @@ class Utils {
         if(cell.getX() < 0 || cell.getX() >= 15 || cell.getY() < 0 || cell.getY() >= 15) {
             return false;
         }
+//        System.err.println("Cell " + cell.toString() + "is on the map");
         return true;
     }
 
     public boolean isSafeToMove(Cell cell, Board board) {
         int map[][] = board.getMap();
-        return isOnTheMap(cell) && map[cell.getY()][cell.getX()] == EMPTY;
+        if (isOnTheMap(cell) && map[cell.getX()][cell.getY()] == EMPTY) {
+//            System.err.println("Cell " + cell.toString() + "is safe");
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public List<Cell> cellsAroundOnecell(Cell cellIn, Board board) {

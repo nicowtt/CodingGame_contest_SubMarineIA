@@ -17,7 +17,7 @@ class Board {
     public Board() {
     }
 
-    public Board(int nbrCellX, int nbrCellY, int[][] map, List<Cell> listCellAlreadyVisited, List<Sector> listSecteurs) {
+    public Board(int nbrCellX, int nbrCellY, int[][] map , List<Cell> listCellAlreadyVisited, List<Sector> listSecteurs) {
         this.nbrCellX = nbrCellX;
         this.nbrCellY = nbrCellY;
         this.map = new int[nbrCellX][nbrCellY];
@@ -53,7 +53,6 @@ class Board {
     public int[][] getMap() {
         return map;
     }
-
     public void setMap(int[][] map) {
         this.map = map;
     }
@@ -78,8 +77,21 @@ class Board {
                 }
             }
         }
+    }
 
+    public void setVisitedCell(Cell cell) {
+        map[cell.getX()][cell.getY()] = ALREADY_VISITED;
+    }
 
+    public void setEmptyCell(Cell cell) {
+        map[cell.getX()][cell.getY()] = EMPTY;
+    }
 
+    public void resetVisitedCell() {
+        for (int i = 0; i < 15; i++) {
+            for (int j = 0; j < 15; j++) {
+                map[i][j] = map[i][j] == ALREADY_VISITED ? EMPTY : map[i][j];
+            }
+        }
     }
 }

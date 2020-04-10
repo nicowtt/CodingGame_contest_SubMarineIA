@@ -347,7 +347,7 @@ class Submarine {
         this.setOpponentOrders(opponentOrders);
     }
 
-    public void startInitialState(Submarine mySubmarine) {
+    public void startInitialState(Submarine mySubmarine, Board board) {
         mySubmarine.setLoadedTorpedo(false);
         mySubmarine.setLoadedSonar(false);
         mySubmarine.setLoadedSilence(false);

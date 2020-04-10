@@ -54,7 +54,10 @@ class Cell {
 
     @Override
     public boolean equals(Object obj) {
+//        System.err.println("equals method:" + obj.toString());
+//        System.err.println("equals method compare:" + x + y);
         Cell cell = (Cell) obj;
+//        System.err.println("result:" + (x == cell.getX() && y == cell.getY()));
         return x == cell.getX() && y == cell.getY();
     }
 }
