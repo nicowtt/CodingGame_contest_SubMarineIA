@@ -345,4 +345,30 @@ class Utils {
 //        System.err.println("list cell around this cell: " + listCell.toString());
         return listCell;
     }
+
+    public void myNextMoveWhenILeak(Submarine mySubmarine, int nbrOfLeakcells) {
+        String cardinalString = mySubmarine.getMyNextMove().getCardinalPoint();
+        Cell futurPos = new Cell();
+        // check
+        System.err.println("cardinal string:" + cardinalString);
+        if (cardinalString.equals("N ")) {
+            futurPos.setX(mySubmarine.getPositionX());
+            futurPos.setY(mySubmarine.getPositionY() - nbrOfLeakcells);
+        }
+        if (cardinalString.equals("S ")) {
+            futurPos.setX(mySubmarine.getPositionX());
+            futurPos.setY(mySubmarine.getPositionY() + nbrOfLeakcells);
+        }
+        if (cardinalString.equals("E ")) {
+            futurPos.setX(mySubmarine.getPositionX() + nbrOfLeakcells);
+            futurPos.setY(mySubmarine.getPositionY());
+        }
+        else {
+            futurPos.setX(mySubmarine.getPositionX() - nbrOfLeakcells);
+            futurPos.setY(mySubmarine.getPositionY());
+        }
+        mySubmarine.setMyNextMove(futurPos);
+        // check
+        System.err.println("my new pos after leak = " + futurPos.toString());
+    }
 }

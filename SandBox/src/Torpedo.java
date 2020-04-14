@@ -79,7 +79,7 @@ class Torpedo {
         List<Cell> possibilityOfTorpedoFire = new ArrayList<>();
         List<Cell> myRangeTorpedoList = mySubmarine.getListTorpedoRange();
         //check.
-        System.err.println("5 myRangeTorpedoList= " + myRangeTorpedoList.stream().count());
+//        System.err.println("5 myRangeTorpedoList= " + myRangeTorpedoList.stream().count());
 
         for (int i = 0; i < inputRangeListAfterTorpedo.size() ; i++) { // ok this list contains cells!
             for (int j = 0; j < myRangeTorpedoList.size(); j++) {
@@ -105,7 +105,6 @@ class Torpedo {
         // check
         Long countFirecell = fireList.stream().count();
         System.err.println("Possibility of fire on: " + countFirecell);
-                System.err.println("Possibility of fire on: " + fireList.toString());
         if (!fireList.isEmpty()) {
             mySubmarine.setCanIfireTorpedoFollowingOppTorp(true);
         } else {
@@ -125,12 +124,15 @@ class Torpedo {
         // remove safe cell to mysecto cells
         List<Cell> mySectorWithoutsafeList = utils.removeCellsOnList(mySectorCellList, mySafeCellList);
         // check
-        System.err.println("3 Create possibility Fire cell on sector " + mySectorWithoutsafeList.stream().count()); //21
+//        System.err.println("3 Create possibility Fire cell on sector " + mySectorWithoutsafeList.stream().count()); //21
         // get my range torpedo list
         // keep only forFireList - myrangeTorpedo -> to verify
         List<Cell> fireList = mixRangePossibilityAfterTorpedoWithMyRangeTorpedo(mySectorWithoutsafeList,mySubmarine); // 0!! bug
         // check
-        System.err.println("4 Create possibility Fire cell on sector " + fireList.stream().count());
+//        System.err.println("4 Create possibility Fire cell on sector " + fireList.stream().count());
+        if (fireList.stream().count() == 0) {
+            mySubmarine.setCanIfireFollowingSonarFeedback(false);
+        }
         // check
 //                System.err.println("potential fire following sonar: " + fireList.toString());
         System.err.println("potential fire on my sector: " + fireList.stream().count());

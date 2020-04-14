@@ -45,12 +45,15 @@ class Submarine {
     private Boolean iFireOnPrecedentLoop;
     private Boolean listOppCellIncrease;
 
+    private int nbrOfCellOnTorpedoFireList;
+    private int possibilityOfCellsLeak;
+
 
     // constructor
     public Submarine() {
     }
 
-    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, Cell opponentCell, int opponentSurfaceSector, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove, int destinationSector, Cell myFireTorpedoCell, Boolean loadedTorpedo, Boolean loadedSonar, Boolean loadedSilence, Boolean isOpponentSendTorpedo, Boolean canIfireTorpedoFollowingOppTorp, Boolean canIfireFollowingTorpedoFeedback, Boolean canIfireFollowingSonarFeedback, Boolean canISendSonar, Boolean moveNextOnSilence, Boolean oppPresenceOnMySector, String nextMoveString, Boolean iFireOnPrecedentLoop, Boolean listOppCellIncrease) {
+    public Submarine(int id, int positionX, int positionY, int mySector, int life, int lifeLoopBefore, int torpedoCooldown, int sonarCooldown, int silenceCooldown, int mineCooldown, String sonarResult, String opponentOrders, Cell opponentCell, int opponentSurfaceSector, List<Cell> safeListOfCellAroundMe, List<Cell> listTorpedoRange, List<Cell> listOpponentPositionAfterTorpedo, Cell opponentTorpedoExplosion, List<Cell> torpedoFireList, Cell myNextMove, int destinationSector, Cell myFireTorpedoCell, Boolean loadedTorpedo, Boolean loadedSonar, Boolean loadedSilence, Boolean isOpponentSendTorpedo, Boolean canIfireTorpedoFollowingOppTorp, Boolean canIfireFollowingTorpedoFeedback, Boolean canIfireFollowingSonarFeedback, Boolean canISendSonar, Boolean moveNextOnSilence, Boolean oppPresenceOnMySector, String nextMoveString, Boolean iFireOnPrecedentLoop, Boolean listOppCellIncrease, int nbrOfCellOnTorpedoFireList, int possibilityOfCellsLeak) {
         this.id = id;
         this.positionX = positionX;
         this.positionY = positionY;
@@ -86,6 +89,8 @@ class Submarine {
         this.nextMoveString = nextMoveString;
         this.iFireOnPrecedentLoop = iFireOnPrecedentLoop;
         this.listOppCellIncrease = listOppCellIncrease;
+        this.nbrOfCellOnTorpedoFireList = nbrOfCellOnTorpedoFireList;
+        this.possibilityOfCellsLeak = possibilityOfCellsLeak;
     }
 
     // getters setters
@@ -299,6 +304,18 @@ class Submarine {
     public void setListOppCellIncrease(Boolean listOppCellIncrease) {
         this.listOppCellIncrease = listOppCellIncrease;
     }
+    public int getNbrOfCellOnTorpedoFireList() {
+        return nbrOfCellOnTorpedoFireList;
+    }
+    public void setNbrOfCellOnTorpedoFireList(int nbrOfCellOnTorpedoFireList) {
+        this.nbrOfCellOnTorpedoFireList = nbrOfCellOnTorpedoFireList;
+    }
+    public int getPossibilityOfCellsLeak() {
+        return possibilityOfCellsLeak;
+    }
+    public void setPossibilityOfCellsLeak(int possibilityOfCellsLeak) {
+        this.possibilityOfCellsLeak = possibilityOfCellsLeak;
+    }
 
     // to string
     @Override
@@ -425,5 +442,20 @@ class Submarine {
         if (mySubmarine.getSonarResult().equals("Y")) {
             mySubmarine.setCanIfireFollowingSonarFeedback(true);
         }
+
+        // check countNbrOfCellOnTorpedoFireList
+        setNbrOfCellOnTorpedoFireList(countNbrOfCellOnTorpedoFireList());
+    }
+
+    public int countNbrOfCellOnTorpedoFireList() {
+        if (getTorpedoFireList() != null ) {
+            long nbr = getTorpedoFireList().stream().count();
+            // check
+            System.err.println("nbr of cell torpedo fire list: " + nbr);
+            return (int)nbr;
+        } else {
+            return 0;
+        }
+
     }
 }

@@ -51,7 +51,7 @@ class Action {
 
     public void whenMySubmarineIs2PointsDamaged(Submarine mySubmarine) {
         String silence = "SILENCE ";
-        // if important damage try to move silence (for now only one move on silence).
+        // if important damage try to move silence (for now only one move on silence)
         if (mySubmarine.getNextMoveString() != "SURFACE" && mySubmarine.getMoveNextOnSilence() && mySubmarine.getLoadedSilence()) {
             //check
             System.err.println("next move on silence!");
@@ -85,6 +85,8 @@ class Action {
             mySubmarine.setMyFireTorpedoCell(randomfireTorpedo);
             // if opp is lock
             if (mySubmarine.getOpponentCell() != null) {
+                //check
+                System.err.println("fire on opp cell!");
                 addfireTorpedoString = "TORPEDO " + mySubmarine.getOpponentCell().getX()
                         + " " + mySubmarine.getOpponentCell().getY();
             } else {

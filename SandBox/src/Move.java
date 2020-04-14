@@ -5,6 +5,7 @@ import java.util.*;
  */
 class Move {
     Utils utils = new Utils();
+    LocateOpponent locateOpponent = new LocateOpponent();
     private int destinationSector = 4; // 5 in fact
     private static int EMPTY = 0;
     private static int ISLAND = 1;
@@ -147,6 +148,94 @@ class Move {
         }
     }
 
+    /**
+     * Avoid dead end(full fill algo) and follow opp movement if possible
+     * @param mySubmarine
+     * @param board
+     * @return
+     */
+    public String moveIA5(Submarine mySubmarine, Board board) {
+        map = board.getMap();
+        String direction = mixMoveIA5AndFollowOpp(mySubmarine, board);
+
+        if (direction != "-") {
+            return direction;
+        } else {
+            board.resetVisitedCell();
+            return "SURFACE";
+        }
+    }
+
+    public String mixMoveIA5AndFollowOpp(Submarine mySubmarine, Board board) {
+        Cell myCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY(), null, null);
+        String oppOrders = locateOpponent.readOpponentMove(mySubmarine.getOpponentOrders());
+
+        board.setVisitedCell(myCell);
+
+        Cell northCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY() - 1, "N ", null);
+        Cell southCell = new Cell(mySubmarine.getPositionX(), mySubmarine.getPositionY() + 1, "S ", null);
+        Cell eastCell = new Cell(mySubmarine.getPositionX() + 1 , mySubmarine.getPositionY(), "E ", null);
+        Cell westCell = new Cell(mySubmarine.getPositionX() - 1, mySubmarine.getPositionY(), "W ", null);
+
+        int northCells = backtrack(map, northCell, board, new ArrayList<>());
+        int southCells = backtrack(map, southCell, board, new ArrayList<>());
+        int eastCells = backtrack(map, eastCell, board, new ArrayList<>());
+        int westCells = backtrack(map, westCell, board, new ArrayList<>());
+
+        System.err.println("N= " + northCells + " S= " + southCells + " E= " + eastCells + " W= " + westCells);
+
+        int maxCells = Math.max(northCells, Math.max(southCells, Math.max(eastCells, westCells)));
+
+        if (maxCells == 0) {
+            return "-";
+        }
+        else if (oppOrders.equals("N") && northCells > 1) {
+            mySubmarine.setMyNextMove(northCell);
+            mySubmarine.setPossibilityOfCellsLeak(northCells);
+            System.err.println("Following opp on N direction");
+            return "MOVE N ";
+        }
+        else if (oppOrders.equals("S") && southCells > 1) {
+            mySubmarine.setMyNextMove(southCell);
+            mySubmarine.setPossibilityOfCellsLeak(southCells);
+            System.err.println("Following opp on S direction");
+            return "MOVE S ";
+        }
+        else if (oppOrders.equals("E") && eastCells > 1) {
+            mySubmarine.setMyNextMove(eastCell);
+            mySubmarine.setPossibilityOfCellsLeak(eastCells);
+            System.err.println("Following opp on E direction");
+            return "MOVE E ";
+        }
+        else if (oppOrders.equals("W") && westCells > 1) {
+            mySubmarine.setMyNextMove(westCell);
+            mySubmarine.setPossibilityOfCellsLeak(westCells);
+            System.err.println("Following opp on W direction");
+            return "MOVE W ";
+        } else {
+            if (northCells == maxCells) {
+                mySubmarine.setMyNextMove(northCell);
+                mySubmarine.setPossibilityOfCellsLeak(northCells);
+                return "MOVE N ";
+            }
+            else if (southCells == maxCells) {
+                mySubmarine.setMyNextMove(southCell);
+                mySubmarine.setPossibilityOfCellsLeak(southCells);
+                return "MOVE S ";
+            }
+            else if (eastCells == maxCells) {
+                mySubmarine.setMyNextMove(eastCell);
+                mySubmarine.setPossibilityOfCellsLeak(eastCells);
+                return "MOVE E ";
+            }
+            else {
+                mySubmarine.setMyNextMove(westCell);
+                mySubmarine.setPossibilityOfCellsLeak(westCells);
+                return "MOVE W ";
+            }
+        }
+
+    }
 
     public String getBestDirection(Cell myPosCell, Board board, Submarine mySubmarine) {
         board.setVisitedCell(myPosCell);
@@ -171,17 +260,21 @@ class Move {
 
         if (northCells == maxCells) {
             mySubmarine.setMyNextMove(northCell);
+            mySubmarine.setPossibilityOfCellsLeak(northCells);
             return "MOVE N ";
         }
         if (southCells == maxCells) {
             mySubmarine.setMyNextMove(southCell);
+            mySubmarine.setPossibilityOfCellsLeak(southCells);
             return "MOVE S ";
         }
         if (eastCells == maxCells) {
             mySubmarine.setMyNextMove(eastCell);
+            mySubmarine.setPossibilityOfCellsLeak(eastCells);
             return "MOVE E ";
         }
         mySubmarine.setMyNextMove(westCell);
+        mySubmarine.setPossibilityOfCellsLeak(westCells);
         return "MOVE W ";
     }
 
@@ -220,7 +313,6 @@ class Move {
         }
         return false;
     }
-
 
     public Cell getOneCellOnrandomSector(Submarine mySubmarine, Board board) {
         List<Sector> listOfAllSector = board.getListSecteurs();

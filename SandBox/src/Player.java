@@ -83,10 +83,16 @@ class Player {
             mySubmarine.check(mySubmarine,opponentSubmarine, board);
 
             // ******************************* 5 ****** MOVE AND ACTION ***********************************************
-            // IA1 -> random cell ; IA2 -> scanning ; IA3 -> random cell(each move) on random sector
+            // --security-- ->if i can't move to opp pos
+            if (mySubmarine.getNbrOfCellOnTorpedoFireList() == 0) { mySubmarine.setOpponentCell(null); }
+            // IA1 -> random cell ; IA2 -> scanning ; IA3 -> random cell(each move) on random sector.
 //            mySubmarine.setNextMoveString(move.moveIA3(mySubmarine, board));
-            mySubmarine.setNextMoveString(move.moveIA4(mySubmarine, board));
-
+//            mySubmarine.setNextMoveString(move.moveIA4(mySubmarine, board));
+            if (mySubmarine.getOpponentCell() != null ||
+                    (mySubmarine.getNbrOfCellOnTorpedoFireList() <= 9) && mySubmarine.getNbrOfCellOnTorpedoFireList() > 0) {
+                System.err.println("try to following opp move !");
+                mySubmarine.setNextMoveString(move.moveIA5(mySubmarine, board)); }
+            else { mySubmarine.setNextMoveString(move.moveIA4(mySubmarine, board)); }
             // ----------------------------------------------------------------
             action.whenMySubmarineToSurface(mySubmarine, board);
             action.forChargingSubmarineTools(mySubmarine);

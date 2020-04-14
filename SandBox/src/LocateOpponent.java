@@ -48,7 +48,7 @@ class LocateOpponent {
         // check
         if (moveOrders.length > 1) {
             //check
-            System.err.println("opponent order move: " + moveOrders[1]);
+//            System.err.println("opponent order move: " + moveOrders[1]);
             String opponentMove = moveOrders[1];
             return opponentMove;
         } else {
@@ -92,7 +92,7 @@ class LocateOpponent {
         }
 
         // check
-        System.err.println("opponent order Torpedo cell: " + opponentTorpedoCell.toString());
+//        System.err.println("opponent order Torpedo cell: " + opponentTorpedoCell.toString());
         return opponentTorpedoCell;
 
     }
@@ -154,8 +154,8 @@ class LocateOpponent {
 
         }
         // check
-        System.err.println("passage update presence list after torpedo");
-        System.err.println("mySubmarine.getOpponentTorpedoExplosion = " + mySubmarine.getOpponentTorpedoExplosion());
+//        System.err.println("passage update presence list after torpedo");
+//        System.err.println("mySubmarine.getOpponentTorpedoExplosion = " + mySubmarine.getOpponentTorpedoExplosion());
 
 
 
@@ -243,7 +243,7 @@ class LocateOpponent {
                         // check
                         System.err.println("opp life -2 !!!");
                         if (mySubmarine.getOpponentCell() != null) {
-                            System.err.println("new opp cell = " + mySubmarine.getOpponentCell().toString());
+                            System.err.println("Opponent cell = " + mySubmarine.getOpponentCell().toString());
                         }
                     }
                 }
@@ -252,7 +252,7 @@ class LocateOpponent {
                         mySubmarine.setOpponentCell(utils.findCellWithCardinalPoint(oppMove, mySubmarine.getOpponentCell().getX(), mySubmarine.getOpponentCell().getY()));
                         //check
                         if (mySubmarine.getOpponentCell() != null) {
-                            System.err.println("new opp cell second pass = " + mySubmarine.getOpponentCell().toString());
+                            System.err.println("Opponent cell second pass = " + mySubmarine.getOpponentCell().toString());
                         }
                     }
                 }
