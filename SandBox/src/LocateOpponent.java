@@ -124,6 +124,13 @@ class LocateOpponent {
         if (mySubmarine.getOpponentOrders().contains("SILENCE")) {
             mySubmarine.setOpponentTorpedoExplosion(null);
             mySubmarine.setTorpedoFireList(null);
+            mySubmarine.setListOpponentPositionAfterTorpedo(null);
+            mySubmarine.setOpponentCell(null);
+            mySubmarine.setNbrOfCellOnTorpedoFireList(0);
+            mySubmarine.setCanIfireFollowingSonarFeedback(false);
+            mySubmarine.setCanIfireTorpedoFollowingOppTorp(false);
+            mySubmarine.setCanIfireFollowingTorpedoFeedback(false);
+
             //check
             System.err.println("opp move in silent -> reset opponentTorpedoExplosion list");
         } else {
