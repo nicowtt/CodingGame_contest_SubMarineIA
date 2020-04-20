@@ -34,10 +34,13 @@ https://github.com/CodinGameCommunity/ocean-of-code.
 
 ### Resultat:
 Ceci est ma première compétition de code. (j'ai de la marge de progression... ;o)  
-7 228 participants dans le monde!
-2263 classés
+7 258 participants dans le monde!
+2279 classés
 mon résultat:
 ![alt text](https://github.com/nicowtt/CodingGame_contest_SubMarineIA/blob/master/Tof2.jpg)
+
+### Dernière partie:
+https://www.codingame.com/replay/452687072
 
 ### Impressions personnelles:
 C'est un défis trés difficile... mais tellement fun!
